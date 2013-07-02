@@ -62,6 +62,8 @@ class SensorWidget(QWidget):
 		self.brightMono		= QColor(255, 20, 20)
 		self.darkMono 		= QColor(200, 10, 10)
 		self.penBattOutline	= QPen(self.brightMono, 4)
+		self.coilColors 	= [QColor(204, 150, 54), QColor(75, 135, 101), QColor(146, 8, 85)]
+		# other interesting colors: QColor(246, 7, 72)
 
 		self.fontSpeed 		= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
@@ -122,36 +124,32 @@ class SensorWidget(QWidget):
 			dc.setFont(self.fontSlowDown)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignTop, strSlow)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
-
-			# TODO: Draw X
+			# TODO: Draw X between SLOW and DOWN
 
 		## generate coil drawing paths
-		radSlipOuter	= dim / 1.4
-		radSlipInner	= dim / 1.8
+		radSlipOuter	= dim / 1.3
+		radSlipInner	= dim / 1.7
 		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
 		rcSlipOuter 	= QRectF(clientrect.center().x() - radSlipOuter / 2, clientrect.center().y() - radSlipOuter / 2, radSlipOuter, radSlipOuter)
-		pathCoilsR	 	= QPainterPath()
-		pathCoilsL	 	= QPainterPath()
-
-		dc.setPen(self.brightMono)
-		pathCoilsR.arcMoveTo(rcSlipInner, 80)
-		pathCoilsR.arcTo(rcSlipOuter, 80, 0)
-		pathCoilsR.arcTo(rcSlipOuter, 80, -160)
-		pathCoilsR.arcTo(rcSlipInner, -80, 0)
-		pathCoilsR.arcTo(rcSlipInner, -80, 160)
-		pathCoilsR.closeSubpath()
-
-		pathCoilsL.arcMoveTo(rcSlipInner, -80)
-		pathCoilsL.arcTo(rcSlipOuter, -80, 0)
-		pathCoilsL.arcTo(rcSlipOuter, -80, 160)
-		pathCoilsL.arcTo(rcSlipInner, 80, 0)
-		pathCoilsL.arcTo(rcSlipInner, 80, -160)
-		pathCoilsL.closeSubpath()
+		degSpacer		= 0.5
+		degCoilInterval	= (360 / self.sensors.numCoils)
+		degCoilSpan		= degCoilInterval - (degSpacer * self.sensors.numCoils)
 
 		## Draw coil slip and heat graph
-		dc.drawPath(pathCoilsR)
-		dc.drawPath(pathCoilsL)
+		nCoil = 0
+		for coil in self.sensors.coils:
+			nPath = nCoil % 3
+			pathCoil = QPainterPath()
 
+			pathCoil.arcMoveTo(rcSlipOuter, nCoil * degCoilInterval)
+			pathCoil.arcTo(rcSlipOuter, nCoil * degCoilInterval, -degCoilSpan)
+			pathCoil.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, 0)
+			pathCoil.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
+			pathCoil.closeSubpath()
+
+			dc.setPen(self.coilColors[nPath])
+			dc.drawPath(pathCoil)
+			nCoil += 1
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
