@@ -8,10 +8,14 @@ class SensorData():
 	def __init__(self, metric = False):
 		self.metric = metric
 
+	def isSpeedDangerous(self):
+		return self.getSpeed() > (30, 48)[self.metric]
+
 	def getSpeed(self):
 		# TODO: Get data from sensors
 		currentMph = 31.0456135
-		return currentMph * (1, 1.609344)[self.metric]
+		currentSpeed = currentMph * (1, 1.609344)[self.metric]
+		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
 		return '{0:g}'.format(round(self.getSpeed()))
@@ -36,6 +40,7 @@ class SensorWidget(QWidget):
 
 		self.fontSpeed 		= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
+		self.fontSlowDown	= QFont('Liberation Sans Narrow')
 
 		self.penBattOutline.setCapStyle(Qt.SquareCap)
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
@@ -73,6 +78,22 @@ class SensorWidget(QWidget):
 		dc.drawRect(rcBattery)
 		dc.fillRect(rcBattery, self.darkMono)
 
+		## draw speed warning for speeds over 30mph / 48kph
+		if self.sensors.isSpeedDangerous():
+			strSlow		= "SLOW"
+			strDown		= "DOWN"
+			fmSlowDown	= QFontMetrics(self.fontSlowDown)
+			pxSlowDownW	= max(fmSlowDown.boundingRect(strSlow).width(), fmSlowDown.boundingRect(strDown).width())
+			pxSlowDownH = clientrect.height() / 5
+			rcSlowDown	= QRect(clientrect.center() - QPoint(pxSlowDownW + pxSpeedW / 2 + clientrect.width() / 30, pxSlowDownH / 2), QSize(pxSlowDownW, pxSlowDownH))
+
+			dc.fillRect(rcSlowDown, Qt.blue)
+			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignTop, strSlow)
+			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
+
+			# TODO: Draw X
+
+
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
 		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
@@ -80,7 +101,8 @@ class SensorWidget(QWidget):
 	def resizeEvent(self, e):
 		dim = min(self.width(), self.height())
 		self.fontSpeed.setPixelSize(dim / 3)
-		self.fontSpeedUnit.setPixelSize(dim / 24)
+		self.fontSpeedUnit.setPixelSize(dim / 18)
+		self.fontSlowDown.setPixelSize(dim / 24)
 
 
 class MainWindow(QMainWindow):
