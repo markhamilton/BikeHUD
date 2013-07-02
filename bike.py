@@ -3,34 +3,59 @@
 
 import sys
 from PyQt4.Qt import *
+from random import random
 
 class SensorData():
 	def __init__(self, metric = False):
-		self.metric = metric
+		self.numCoils 		= 9 		# must be a multiple of 3 for 3-phase motor
+		self.metric 		= metric
+		self.coils 			= []
+		self.battery 		= 32.4
+		self.speed 			= 30.0456135
+
+		for ii in range(0, self.numCoils):
+			self.coils.append(MagneticCoil)
+
+	def updateCoils(self):
+		for coil in self.coils:
+			coil.updateCoil()
 
 	def isSpeedDangerous(self):
+		# safe limit is 30mph / 48kph
 		return self.getSpeed() > (30, 48)[self.metric]
 
 	def getSpeed(self):
-		# TODO: Get data from sensors
-		currentMph = 31.0456135
-		currentSpeed = currentMph * (1, 1.609344)[self.metric]
+		currentSpeed = self.speed * (1, 1.609344)[self.metric]
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
 		return '{0:g}'.format(round(self.getSpeed()))
 
 	def getBatteryPercent(self):
-		return 32.4;
+		return self.battery;
 
+class MagneticCoil():
+	def __init__(self, coilIndex):
+		self.coilIndex 		= coilIndex
+		self.heatHistory 	= []
+		self.powerHistory 	= []
+
+		for ii in range(0, 10):
+			self.heatHistory.append(0)
+			self.powerHistory.append(0)
+
+	def updateCoil(self):
+		# TODO: Get real sensor data
+		self.heatHistory.append(random(0.0, 10.0))
+		self.heatHistory.popleft()
+		self.powerHistory.append(random(0.0, 10.0))
+		self.powerHistory.popleft()
 
 class SensorWidget(QWidget):
 	def __init__(self):
 		QWidget.__init__(self)
 		self.setMinimumSize(100, 100)
 
-		self.numCoils 		= 9 # must be a multiple of 3 for 3-phase motor
-		self.coils 			= []
 		self.sensors 		= SensorData(False)
 
 		self.background 	= QColor(0, 0, 0)
@@ -46,8 +71,14 @@ class SensorWidget(QWidget):
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
 		self.fontSpeed.setBold(True)
 
+	def initCoils(self):
+		for ii in range(0, self.numCoils):
+			self.coils.append()
+
 	def paintEvent(self, e):
 		clientrect = self.getClientRect()
+		dim = clientrect.height()
+		pad = dim / 40
 
 		dc = QPainter(self)
 		dc.fillRect(clientrect, self.background)
@@ -72,26 +103,54 @@ class SensorWidget(QWidget):
 
 		## draw battery meter
 		sizeBattery		= QSize(clientrect.width() / 8, clientrect.height() / 32)
-		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2), sizeBattery)
+		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2 + pad), sizeBattery)
 
 		dc.setPen(self.penBattOutline)
-		dc.drawRect(rcBattery)
-		dc.fillRect(rcBattery, self.darkMono)
+		# TODO: Finish this, it looks awful as-is:
+		# dc.drawRect(rcBattery)
+		# dc.fillRect(rcBattery, self.darkMono)
 
-		## draw speed warning for speeds over 30mph / 48kph
+		## draw speed warning for speeds over safe limit
 		if self.sensors.isSpeedDangerous():
 			strSlow		= "SLOW"
 			strDown		= "DOWN"
 			fmSlowDown	= QFontMetrics(self.fontSlowDown)
-			pxSlowDownW	= max(fmSlowDown.boundingRect(strSlow).width(), fmSlowDown.boundingRect(strDown).width())
-			pxSlowDownH = clientrect.height() / 5
-			rcSlowDown	= QRect(clientrect.center() - QPoint(pxSlowDownW + pxSpeedW / 2 + clientrect.width() / 30, pxSlowDownH / 2), QSize(pxSlowDownW, pxSlowDownH))
+			pxSlowDownW	= max(fmSlowDown.width(strSlow), fmSlowDown.width(strDown))
+			pxSlowDownH = pxSpeedH - fmSpeed.descent() * 4
+			rcSlowDown	= QRect(clientrect.center() - QPoint(pxSlowDownW + pxSpeedW / 2, pxSlowDownH / 2), QSize(pxSlowDownW, pxSlowDownH))
 
-			dc.fillRect(rcSlowDown, Qt.blue)
+			dc.setFont(self.fontSlowDown)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignTop, strSlow)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
 
 			# TODO: Draw X
+
+		## generate coil drawing paths
+		radSlipOuter	= dim / 1.4
+		radSlipInner	= dim / 1.8
+		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
+		rcSlipOuter 	= QRectF(clientrect.center().x() - radSlipOuter / 2, clientrect.center().y() - radSlipOuter / 2, radSlipOuter, radSlipOuter)
+		pathCoilsR	 	= QPainterPath()
+		pathCoilsL	 	= QPainterPath()
+
+		dc.setPen(self.brightMono)
+		pathCoilsR.arcMoveTo(rcSlipInner, 80)
+		pathCoilsR.arcTo(rcSlipOuter, 80, 0)
+		pathCoilsR.arcTo(rcSlipOuter, 80, -160)
+		pathCoilsR.arcTo(rcSlipInner, -80, 0)
+		pathCoilsR.arcTo(rcSlipInner, -80, 160)
+		pathCoilsR.closeSubpath()
+
+		pathCoilsL.arcMoveTo(rcSlipInner, -80)
+		pathCoilsL.arcTo(rcSlipOuter, -80, 0)
+		pathCoilsL.arcTo(rcSlipOuter, -80, 160)
+		pathCoilsL.arcTo(rcSlipInner, 80, 0)
+		pathCoilsL.arcTo(rcSlipInner, 80, -160)
+		pathCoilsL.closeSubpath()
+
+		## Draw coil slip and heat graph
+		dc.drawPath(pathCoilsR)
+		dc.drawPath(pathCoilsL)
 
 
 	def getClientRect(self):
@@ -100,10 +159,11 @@ class SensorWidget(QWidget):
 
 	def resizeEvent(self, e):
 		dim = min(self.width(), self.height())
+
+		## resize fonts
 		self.fontSpeed.setPixelSize(dim / 3)
 		self.fontSpeedUnit.setPixelSize(dim / 18)
 		self.fontSlowDown.setPixelSize(dim / 24)
-
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
@@ -123,7 +183,7 @@ class BikeHudApp(QApplication):
 
 		self.wnd = MainWindow()
 		self.connect(self, SIGNAL("lastWindowClosed()"), self.shutdown)
-		self.wnd.setGeometry(QRect(100, 100, 600, 600))
+		self.wnd.setGeometry(QRect(100, 100, 400, 400))
 		self.wnd.show()
 
 	def shutdown(self):
