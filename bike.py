@@ -7,7 +7,7 @@ from random import random
 
 class SensorData():
 	def __init__(self, metric = False):
-		self.numCoils 		= 9 		# must be a multiple of 3 for 3-phase motor
+		self.numCoils 		= 9 		# must be a multiple of 3
 		self.metric 		= metric
 		self.coils 			= []
 		self.battery 		= 32.4
@@ -61,9 +61,8 @@ class SensorWidget(QWidget):
 		self.background 	= QColor(0, 0, 0)
 		self.brightMono		= QColor(255, 20, 20)
 		self.darkMono 		= QColor(200, 10, 10)
-		self.penBattOutline	= QPen(self.brightMono, 4)
-		self.coilColors 	= [QColor(204, 150, 54), QColor(75, 135, 101), QColor(146, 8, 85)]
-		# other interesting colors: QColor(246, 7, 72)
+		self.penBattOutline	= QPen(self.brightMono, 2)
+		self.coilColors 	= [QColor(204, 150, 54), QColor(75, 135, 101), QColor(146, 8, 85)] # other interesting colors: QColor(246, 7, 72)
 
 		self.fontSpeed 		= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
@@ -109,7 +108,7 @@ class SensorWidget(QWidget):
 
 		dc.setPen(self.penBattOutline)
 		# TODO: Finish this, it looks awful as-is:
-		# dc.drawRect(rcBattery)
+		dc.drawRect(rcBattery)
 		# dc.fillRect(rcBattery, self.darkMono)
 
 		## draw speed warning for speeds over safe limit
@@ -129,26 +128,38 @@ class SensorWidget(QWidget):
 		## generate coil drawing paths
 		radSlipOuter	= dim / 1.3
 		radSlipInner	= dim / 1.7
-		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
+		radMagOuter		= dim / 0.5
+		radMagInner		= dim / 0.9
 		rcSlipOuter 	= QRectF(clientrect.center().x() - radSlipOuter / 2, clientrect.center().y() - radSlipOuter / 2, radSlipOuter, radSlipOuter)
+		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
+		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
+		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
 		degSpacer		= 0.5
 		degCoilInterval	= (360 / self.sensors.numCoils)
 		degCoilSpan		= degCoilInterval - (degSpacer * self.sensors.numCoils)
 
-		## Draw coil slip and heat graph
+		## Draw coil slip and heat graph, and then magnetic field strength
 		nCoil = 0
 		for coil in self.sensors.coils:
-			nPath = nCoil % 3
-			pathCoil = QPainterPath()
+			nPath 				= nCoil % 3
+			pathSlip 			= QPainterPath()
+			pathField 			= QPainterPath()
+			# degPathIncrement 	= degCoilSpan / len(coil.powerHistory)
 
-			pathCoil.arcMoveTo(rcSlipOuter, nCoil * degCoilInterval)
-			pathCoil.arcTo(rcSlipOuter, nCoil * degCoilInterval, -degCoilSpan)
-			pathCoil.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, 0)
-			pathCoil.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
-			pathCoil.closeSubpath()
+			pathSlip.arcMoveTo(rcSlipOuter, nCoil * degCoilInterval)
+			pathSlip.arcTo(rcSlipOuter, nCoil * degCoilInterval, -degCoilSpan)
+			pathSlip.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, 0)
+			pathSlip.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
+			pathSlip.closeSubpath()
+
+			# TODO: generate the graph for field power history
+			# pathField.arcMoveTo(rcMagInner, nCoil * degCoilInterval)
+			# for powerLevel in coil.powerHistory:
+			# 	radPower = radMagInner + (powerLevel / 10) * (radMagOuter - radMagInner)
+				# pathField.arcTo()
 
 			dc.setPen(self.coilColors[nPath])
-			dc.drawPath(pathCoil)
+			dc.drawPath(pathSlip)
 			nCoil += 1
 
 	def getClientRect(self):
