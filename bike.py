@@ -16,6 +16,9 @@ class SensorData():
 	def getSpeedString(self):
 		return '{0:g}'.format(round(self.getSpeed()))
 
+	def getBatteryPercent(self):
+		return 32.4;
+
 
 class SensorWidget(QWidget):
 	def __init__(self):
@@ -26,23 +29,26 @@ class SensorWidget(QWidget):
 		self.coils 			= []
 		self.sensors 		= SensorData(False)
 
-		self.brightRed 		= QColor(255, 20, 20)
-		self.darkRed 		= QColor(200, 10, 10)
+		self.background 	= QColor(0, 0, 0)
+		self.brightMono		= QColor(255, 20, 20)
+		self.darkMono 		= QColor(200, 10, 10)
+		self.penBattOutline	= QPen(self.brightMono, 4)
 
 		self.fontSpeed 		= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
 
+		self.penBattOutline.setCapStyle(Qt.SquareCap)
+		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
 		self.fontSpeed.setBold(True)
 
 	def paintEvent(self, e):
 		clientrect = self.getClientRect()
 
 		dc = QPainter(self)
-		dc.fillRect(clientrect, Qt.black)
-		dc.setPen(self.brightRed)
-		self.drawOdometer(dc, clientrect)
+		dc.fillRect(clientrect, self.background)
+		dc.setPen(self.brightMono)
 
-	def drawOdometer(self, dc, clientrect):
+		## draw odometer
 		strSpeed 		= self.sensors.getSpeedString()
 		strSpeedUnit 	= ("mph", "kph")[self.sensors.metric]
 
@@ -53,11 +59,19 @@ class SensorWidget(QWidget):
 		pxSpeedH 		= fmSpeed.height()
 		pxSpeedUnitW	= fmSpeedUnit.width(strSpeedUnit)
 		pxSpeedUnitH	= fmSpeedUnit.height()
-		center 			= clientrect.center()
+		rcSpeedUnit		= QRect(clientrect.center() + QPoint(pxSpeedW / 2, -pxSpeedH / 2 - fmSpeed.descent() + fmSpeedUnit.descent()), QSize(pxSpeedUnitW, pxSpeedH))
 
 		dc.drawText(clientrect, Qt.AlignCenter, strSpeed)
 		dc.setFont(self.fontSpeedUnit)
-		dc.drawText(center + QPoint(pxSpeedW / 2, pxSpeedH / 2 - pxSpeedUnitH), strSpeedUnit)
+		dc.drawText(rcSpeedUnit, Qt.AlignBottom, strSpeedUnit)
+
+		## draw battery meter
+		sizeBattery		= QSize(clientrect.width() / 8, clientrect.height() / 32)
+		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2), sizeBattery)
+
+		dc.setPen(self.penBattOutline)
+		dc.drawRect(rcBattery)
+		dc.fillRect(rcBattery, self.darkMono)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
@@ -67,6 +81,7 @@ class SensorWidget(QWidget):
 		dim = min(self.width(), self.height())
 		self.fontSpeed.setPixelSize(dim / 3)
 		self.fontSpeedUnit.setPixelSize(dim / 24)
+
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
