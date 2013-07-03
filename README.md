@@ -8,7 +8,6 @@ More information is coming soon, including snapshots, the hardware used and how 
 
 # Snapshots
 ![2013/07/03 - Screenshot](http://www.markhamilton.info/applications/bike.png)
-* Coming soon...
 
 # Hardware
 * [Beaglebone](http://www.logicsupply.com/products/bb_bblk_000?gclid=CKyzt4mckLgCFRRk7Aod9VwACA) running Debian Linux
