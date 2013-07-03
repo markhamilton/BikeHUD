@@ -60,19 +60,23 @@ class SensorWidget(QWidget):
 		QWidget.__init__(self)
 		self.setMinimumSize(100, 100)
 
-		self.sensors 		= SensorData(False)
+		self.sensors 			= SensorData(False)
 
-		self.background 	= QColor(0, 0, 0)
-		self.brightMono		= QColor(255, 20, 20)
-		self.darkMono 		= QColor(200, 10, 10)
-		self.magPower 	 	= QColor(246, 7, 72)
-		self.penBattOutline	= QPen(self.brightMono, 2)
-		self.coilColors 	= [QColor(204, 150, 54), QColor(75, 135, 101), QColor(146, 8, 85)]
+		self.background 		= QColor(0, 0, 0)
+		self.brightMono			= QColor(255, 20, 20)
+		self.darkMono 			= QColor(200, 10, 10)
+		self.magPower 	 		= QColor(246, 7, 72)
+		self.penBattOutline		= QPen(self.brightMono, 2)
 
-		self.fontSpeed 		= QFont('Liberation Sans Narrow')
-		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
-		self.fontSlowDown	= QFont('Liberation Sans Narrow')
-		self.fontSlipTicks	= QFont('Liberation Sans Narrow')
+		# Coil colors are: [yellow, green, magenta]
+		self.coilColorsBright	= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
+		self.coilColors 		= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
+		self.coilColorsDark		= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
+
+		self.fontSpeed 			= QFont('Liberation Sans Narrow')
+		self.fontSpeedUnit 		= QFont('Liberation Sans Narrow')
+		self.fontSlowDown		= QFont('Liberation Sans Narrow')
+		self.fontSlipTicks		= QFont('Liberation Sans Narrow')
 
 		self.penBattOutline.setCapStyle(Qt.SquareCap)
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
@@ -126,7 +130,7 @@ class SensorWidget(QWidget):
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
 			# TODO: Draw X between SLOW and DOWN?
 
-		## generate coil drawing paths
+		## generate coil sensor drawing paths
 		radSlipTickMin	= dim / 1.24
 		radSlipTickMaj	= dim / 1.26
 		radSlipOuter	= dim / 1.3
@@ -144,11 +148,12 @@ class SensorWidget(QWidget):
 		degCoilInterval	= (360 / self.sensors.numCoils)
 		degCoilSpan		= degCoilInterval - (degSpacer * self.sensors.numCoils)
 
-		## Draw coil slip and heat graph, and then magnetic field strength
+		## Draw coil slip, and then magnetic field strength
 		nCoil = 0
 		for coil in self.sensors.coils:
 			nPath 				= nCoil % 3
 			pathSlip 			= QPainterPath()
+			pathSlipGrid		= QPainterPath()
 			pathField 			= QPainterPath()
 			degPathIncrement 	= degCoilSpan / len(coil.powerHistory)
 
@@ -158,27 +163,35 @@ class SensorWidget(QWidget):
 			pathSlip.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 			pathSlip.closeSubpath()
 
-			dc.setPen(self.coilColors[nPath])
-			dc.setFont(self.fontSlipTicks)
+			## disabled: change the brush and font for tick values
+			# dc.setPen(self.coilColors[nPath])
+			# dc.setFont(self.fontSlipTicks)
 
 			tickMajor = True
 			for tick in range(0, 11):
 				degTickAngle = (nCoil * degCoilInterval) - (tick * 0.1) * degCoilSpan
 
-				# """not necessary for now. also buggy! (colors for text are phase shifted!)"""
-				# if tickMajor:
-				# 	dc.save()
-				# 	dc.translate(clientrect.center())
-				# 	dc.rotate(degTickAngle)
-				# 	dc.translate(QPoint(rcSlipTickMaj.height() / 2 + pad, -fmSlipTicks.height() / 2))
-				# 	dc.drawText(0, 0, str(tick * 10))
-				# 	dc.restore()
+				if tickMajor:
+					pathSlipGrid.arcMoveTo(rcSlipInner, degTickAngle)
+					pathSlipGrid.arcTo(rcSlipOuter, degTickAngle, 0)
+
+					## disabled: draw tick values
+					## not necessary for now. also buggy! (colors for text are phase shifted!)
+					# dc.save()
+					# dc.translate(clientrect.center())
+					# dc.rotate(degTickAngle)
+					# dc.translate(QPoint(rcSlipTickMaj.height() / 2 + pad, -fmSlipTicks.height() / 2))
+					# dc.drawText(0, 0, str(tick * 10))
+					# dc.restore()
 
 				pathSlip.arcMoveTo(rcSlipOuter, degTickAngle)
 				pathSlip.arcTo((rcSlipTickMaj, rcSlipTickMin)[tickMajor], degTickAngle, 0)
 				pathSlip.closeSubpath()
 				tickMajor = not tickMajor
 
+			dc.setPen(self.coilColorsDark[nPath])
+			dc.drawPath(pathSlipGrid)
+			dc.setPen(self.coilColorsBright[nPath])
 			dc.drawPath(pathSlip)
 
 			# TODO: generate the graph for field power history
