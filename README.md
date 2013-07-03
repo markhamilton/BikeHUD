@@ -7,6 +7,7 @@ This was meant to run on a Beaglebone using a touch-screen shield, and a high-am
 More information is coming soon, including snapshots, the hardware used and how to make modifications to fit your needs.
 
 # Snapshots
+![2013/07/03 - Screenshot](http://www.markhamilton.info/applications/bike.png)
 * Coming soon...
 
 # Hardware
