@@ -11,8 +11,8 @@ class SensorData():
 		self.numCoils 		= 9 		# must be a multiple of 3
 		self.metric 		= metric
 		self.coils 			= []
-		self.battery 		= 32.4
-		self.speed 			= 30.0456135
+		self.battery 		= random() * 100.0
+		self.speed 			= random() * 60.0456135
 		self.time 			= datetime.now().time()
 		self.date 			= datetime.now().date()
 
@@ -71,7 +71,7 @@ class SensorWidget(QWidget):
 		self.sensors 			= SensorData(False)
 
 		## disable antialiasing for smoother performance
-		self.lineAntialiasing 	= True
+		self.lineAntialiasing 	= False
 		self.textAntialiasing 	= True
 
 		## tweak colors to your preference
