@@ -11,17 +11,14 @@ class SensorData():
 		self.numCoils 		= 9 		# must be a multiple of 3
 		self.metric 		= metric
 		self.coils 			= []
-		self.battery 		= random() * 100.0
-		self.speed 			= random() * 60.0456135
-		self.time 			= datetime.now().time()
-		self.date 			= datetime.now().date()
+		self.speed 			= 12
 
 		for ii in range(0, self.numCoils):
 			self.coils.append(MagneticCoil(ii))
 
-	def updateCoils(self):
-		for coil in self.coils:
-			coil.updateCoil()
+		self.updateSensorsHighPriority()
+		self.updateSensorsMediumPriority()
+		self.updateSensorsLowPriority()
 
 	def isSpeedDangerous(self):
 		# safe limit is 30mph / 48kph
@@ -40,6 +37,19 @@ class SensorData():
 	def getTime(self):
 		return self.time
 
+	def updateSensorsHighPriority(self):
+		self.time 			= datetime.now().time()
+
+	def updateSensorsMediumPriority(self):
+		self.speed 			= self.speed + random() * 2.0 - 1.0
+
+		for coil in self.coils:
+			coil.updateCoil()
+
+	def updateSensorsLowPriority(self):
+		self.date 			= datetime.now().date()
+		self.battery 		= random() * 100.0
+
 	def getDate(self):
 		return self.date
 
@@ -49,7 +59,7 @@ class MagneticCoil():
 		self.heatHistory 	= []
 		self.powerHistory 	= []
 
-		for ii in range(0, 10):
+		for ii in range(0, 11):
 			self.heatHistory.append(0)
 			self.powerHistory.append(0)
 
@@ -71,7 +81,7 @@ class SensorWidget(QWidget):
 		self.sensors 			= SensorData(False)
 
 		## disable antialiasing for smoother performance
-		self.lineAntialiasing 	= False
+		self.lineAntialiasing 	= True
 		self.textAntialiasing 	= True
 
 		## tweak colors to your preference
@@ -81,12 +91,12 @@ class SensorWidget(QWidget):
 		self.magPower 	 		= QColor(246, 7, 72)
 		self.penBattOutline		= QPen(self.brightMono, 2)
 
-		# coil colors are: [yellow, green, magenta]
+		## coil colors are: [yellow, green, magenta]
 		self.coilColorsBright	= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
 		self.coilColors 		= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
 		self.coilColorsDark		= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
 
-		# tweak fonts to your preference (you need a narrow font!)
+		## tweak fonts to your preference (you need a narrow font!)
 		self.fontSpeed 			= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 		= QFont('Liberation Sans Narrow')
 		self.fontSlowDown		= QFont('Liberation Sans Narrow')
@@ -97,6 +107,29 @@ class SensorWidget(QWidget):
 
 		self.penBattOutline.setCapStyle(Qt.SquareCap)
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
+
+		## set timers to update sensors
+		self.timerLow 			= QTimer()
+		self.timerMedium		= QTimer()
+		self.timerHigh 			= QTimer()
+
+		self.timerHigh.timeout.connect(self.updateHighPriority)
+		self.timerMedium.timeout.connect(self.updateMediumPriorty)
+		self.timerLow.timeout.connect(self.updateLowPriority)
+		
+		self.timerHigh.start(10)
+		self.timerMedium.start(600)
+		self.timerLow.start(2000)
+
+	def updateHighPriority(self):
+		self.sensors.updateSensorsHighPriority()
+		self.repaint()
+
+	def updateMediumPriorty(self):
+		self.sensors.updateSensorsMediumPriority()
+
+	def updateLowPriority(self):
+		self.sensors.updateSensorsLowPriority()
 
 	def paintEvent(self, e):
 		clientrect = self.getClientRect()
