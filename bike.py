@@ -4,6 +4,7 @@
 import sys
 from PyQt4.Qt import *
 from random import random
+from datetime import datetime
 
 class SensorData():
 	def __init__(self, metric = False):
@@ -12,6 +13,8 @@ class SensorData():
 		self.coils 			= []
 		self.battery 		= 32.4
 		self.speed 			= 30.0456135
+		self.time 			= datetime.now().time()
+		self.date 			= datetime.now().date()
 
 		for ii in range(0, self.numCoils):
 			self.coils.append(MagneticCoil(ii))
@@ -33,6 +36,12 @@ class SensorData():
 
 	def getBatteryPercent(self):
 		return self.battery
+
+	def getTime(self):
+		return self.time
+
+	def getDate(self):
+		return self.date
 
 class MagneticCoil():
 	def __init__(self, coilIndex):
@@ -58,29 +67,36 @@ class MagneticCoil():
 class SensorWidget(QWidget):
 	def __init__(self):
 		QWidget.__init__(self)
-		self.setMinimumSize(100, 100)
 
 		self.sensors 			= SensorData(False)
 
+		## disable antialiasing for smoother performance
+		self.lineAntialiasing 	= True
+		self.textAntialiasing 	= True
+
+		## tweak colors to your preference
 		self.background 		= QColor(0, 0, 0)
 		self.brightMono			= QColor(255, 20, 20)
-		self.darkMono 			= QColor(200, 10, 10)
+		self.darkMono 			= QColor(102, 8, 8)
 		self.magPower 	 		= QColor(246, 7, 72)
 		self.penBattOutline		= QPen(self.brightMono, 2)
 
-		# Coil colors are: [yellow, green, magenta]
+		# coil colors are: [yellow, green, magenta]
 		self.coilColorsBright	= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
 		self.coilColors 		= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
 		self.coilColorsDark		= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
 
+		# tweak fonts to your preference (you need a narrow font!)
 		self.fontSpeed 			= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 		= QFont('Liberation Sans Narrow')
 		self.fontSlowDown		= QFont('Liberation Sans Narrow')
 		self.fontSlipTicks		= QFont('Liberation Sans Narrow')
+		self.fontTime 			= QFont('Liberation Sans Narrow')
+
+		self.fontSpeed.setBold(True)
 
 		self.penBattOutline.setCapStyle(Qt.SquareCap)
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
-		self.fontSpeed.setBold(True)
 
 	def paintEvent(self, e):
 		clientrect = self.getClientRect()
@@ -88,7 +104,10 @@ class SensorWidget(QWidget):
 		pad = dim / 40
 
 		dc = QPainter(self)
+		dc.drawRect(QRect(0, 0, self.width(), self.height()))
 		dc.fillRect(clientrect, self.background)
+		dc.setRenderHint(QPainter.Antialiasing, self.lineAntialiasing)
+		dc.setRenderHint(QPainter.TextAntialiasing, self.textAntialiasing)
 		dc.setPen(self.brightMono)
 
 		## draw odometer
@@ -116,6 +135,16 @@ class SensorWidget(QWidget):
 		# dc.drawRect(rcBattery)
 		# dc.fillRect(rcBattery, self.darkMono)
 
+		## draw current time
+		fmTime			= QFontMetrics(self.fontTime)
+		rcTimeText 		= QRect(clientrect.left(), clientrect.center().y() + (pxSpeedH / 2) - fmSpeed.descent() + pad, clientrect.width(), fmTime.height())
+		rcDateText 		= QRect(clientrect.left(), rcTimeText.bottomRight().y(), clientrect.width(), fmTime.height())
+
+		dc.setFont(self.fontTime)
+		dc.setPen(self.darkMono)
+		dc.drawText(rcTimeText, Qt.AlignCenter, str(self.sensors.getTime()))
+		dc.drawText(rcDateText, Qt.AlignCenter, str(self.sensors.getDate()))
+
 		## draw speed warning for speeds over safe limit
 		if self.sensors.isSpeedDangerous():
 			strSlow		= "SLOW"
@@ -126,9 +155,10 @@ class SensorWidget(QWidget):
 			rcSlowDown	= QRect(clientrect.center() - QPoint(pxSlowDownW + pxSpeedW / 2, pxSlowDownH / 2), QSize(pxSlowDownW, pxSlowDownH))
 
 			dc.setFont(self.fontSlowDown)
+			dc.setPen(self.brightMono)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignTop, strSlow)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
-			# TODO: Draw X between SLOW and DOWN?
+			# Suggestion: Draw X between SLOW and DOWN?
 
 		## generate coil sensor drawing paths
 		radSlipTickMin	= dim / 1.24
@@ -171,6 +201,7 @@ class SensorWidget(QWidget):
 			for tick in range(0, 11):
 				degTickAngle = (nCoil * degCoilInterval) - (tick * 0.1) * degCoilSpan
 
+				## generate graph grid
 				if tickMajor:
 					pathSlipGrid.arcMoveTo(rcSlipInner, degTickAngle)
 					pathSlipGrid.arcTo(rcSlipOuter, degTickAngle, 0)
@@ -184,17 +215,18 @@ class SensorWidget(QWidget):
 					# dc.drawText(0, 0, str(tick * 10))
 					# dc.restore()
 
+				## generate graph tick marks
 				pathSlip.arcMoveTo(rcSlipOuter, degTickAngle)
 				pathSlip.arcTo((rcSlipTickMaj, rcSlipTickMin)[tickMajor], degTickAngle, 0)
 				pathSlip.closeSubpath()
 				tickMajor = not tickMajor
 
-			dc.setPen(self.coilColorsDark[nPath])
+			dc.setPen(QPen(self.coilColorsDark[nPath], 1, Qt.DotLine))
 			dc.drawPath(pathSlipGrid)
 			dc.setPen(self.coilColorsBright[nPath])
 			dc.drawPath(pathSlip)
 
-			# TODO: generate the graph for field power history
+			## generate the graph for field power history
 			pathField.arcMoveTo(rcMagInner, nCoil * degCoilInterval)
 			tickIndex = 0
 			for powerLevel in coil.powerHistory:
@@ -206,15 +238,12 @@ class SensorWidget(QWidget):
 
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, 0)
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
-			# pathField.closeSubpath()
 
 			dc.setPen(self.magPower)
-			# dc.fillPath(pathField, self.magPower)
 			dc.drawPath(pathField)
 
 			nCoil += 1
 			
-
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
 		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
@@ -227,12 +256,15 @@ class SensorWidget(QWidget):
 		self.fontSpeedUnit.setPixelSize(dim / 18)
 		self.fontSlowDown.setPixelSize(dim / 24)
 		self.fontSlipTicks.setPixelSize(dim / 30)
+		self.fontTime.setPixelSize(dim / 20)
+
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
 		QMainWindow.__init__(self, *args)
-		self.wnd = QWidget(self)
-		self.sensors = SensorWidget()
+		self.wnd 		= QWidget(self)
+		self.sensors 	= SensorWidget()
+
 		self.setCentralWidget(self.sensors)
 
 
@@ -246,7 +278,7 @@ class BikeHudApp(QApplication):
 
 		self.wnd = MainWindow()
 		self.connect(self, SIGNAL("lastWindowClosed()"), self.shutdown)
-		self.wnd.setGeometry(QRect(100, 100, 400, 400))
+		self.wnd.setGeometry(QRect(100, 100, 800, 480))
 		self.wnd.show()
 		# self.wnd.showFullScreen()
 
