@@ -11,7 +11,7 @@ This was meant to run on a Beaglebone using a touch-screen shield or python-capa
 * [Beaglebone](http://www.logicsupply.com/products/bb_bblk_000?gclid=CKyzt4mckLgCFRRk7Aod9VwACA) running Debian Linux
 * [LCD Touch-Screen Cape](http://www.newark.com/jsp/search/productdetail.jsp?SKU=26W8118&CMP=KNC-GPLA&mckv=|pcrid|20115736341|plid|)
 
-Alternatively, a phone capable of running python and Qt may be used instead. I am writing 2 drivers -- one to interface with an arduino using a phone's USB board, and another to directly connect using the beaglebone GPIO pins.
+Alternatively, a phone capable of running python and Qt may be used instead. I am writing 2 drivers -- one to interface with an arduino using a phone's USB port, and another to directly connect using the beaglebone GPIO pins.
 
 ### SOFTWARE REQUIREMENTS
 * Python 2.7 or higher
