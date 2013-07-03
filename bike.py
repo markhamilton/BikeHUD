@@ -106,9 +106,8 @@ class SensorWidget(QWidget):
 		sizeBattery		= QSize(clientrect.width() / 8, clientrect.height() / 32)
 		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2 + pad), sizeBattery)
 
-		dc.setPen(self.penBattOutline)
 		# TODO: Finish this, it looks awful as-is:
-		dc.drawRect(rcBattery)
+		# dc.drawRect(rcBattery)
 		# dc.fillRect(rcBattery, self.darkMono)
 
 		## draw speed warning for speeds over safe limit
@@ -126,10 +125,14 @@ class SensorWidget(QWidget):
 			# TODO: Draw X between SLOW and DOWN
 
 		## generate coil drawing paths
+		radSlipTickMin	= dim / 1.24
+		radSlipTickMaj	= dim / 1.26
 		radSlipOuter	= dim / 1.3
 		radSlipInner	= dim / 1.7
 		radMagOuter		= dim / 0.5
 		radMagInner		= dim / 0.9
+		rcSlipTickMaj 	= QRectF(clientrect.center().x() - radSlipTickMaj / 2, clientrect.center().y() - radSlipTickMaj / 2, radSlipTickMaj, radSlipTickMaj)
+		rcSlipTickMin 	= QRectF(clientrect.center().x() - radSlipTickMin / 2, clientrect.center().y() - radSlipTickMin / 2, radSlipTickMin, radSlipTickMin)
 		rcSlipOuter 	= QRectF(clientrect.center().x() - radSlipOuter / 2, clientrect.center().y() - radSlipOuter / 2, radSlipOuter, radSlipOuter)
 		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
 		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
@@ -144,7 +147,7 @@ class SensorWidget(QWidget):
 			nPath 				= nCoil % 3
 			pathSlip 			= QPainterPath()
 			pathField 			= QPainterPath()
-			# degPathIncrement 	= degCoilSpan / len(coil.powerHistory)
+			degPathIncrement 	= degCoilSpan / 10 #len(coil.powerHistory)
 
 			pathSlip.arcMoveTo(rcSlipOuter, nCoil * degCoilInterval)
 			pathSlip.arcTo(rcSlipOuter, nCoil * degCoilInterval, -degCoilSpan)
@@ -152,11 +155,19 @@ class SensorWidget(QWidget):
 			pathSlip.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 			pathSlip.closeSubpath()
 
+			tickMajor = True
+			for tick in range(0, 11):
+				degTickAngle = (nCoil * degCoilInterval) - (tick * 0.1) * degCoilSpan
+				pathSlip.arcMoveTo(rcSlipOuter, degTickAngle)
+				pathSlip.arcTo((rcSlipTickMaj, rcSlipTickMin)[tickMajor], degTickAngle, 0)
+				pathSlip.closeSubpath()
+				tickMajor = not tickMajor
+
 			# TODO: generate the graph for field power history
 			# pathField.arcMoveTo(rcMagInner, nCoil * degCoilInterval)
-			# for powerLevel in coil.powerHistory:
+			# for powerLevel in powerHistory:
 			# 	radPower = radMagInner + (powerLevel / 10) * (radMagOuter - radMagInner)
-				# pathField.arcTo()
+			# 	pathField.arcTo()
 
 			dc.setPen(self.coilColors[nPath])
 			dc.drawPath(pathSlip)
@@ -194,6 +205,7 @@ class BikeHudApp(QApplication):
 		self.connect(self, SIGNAL("lastWindowClosed()"), self.shutdown)
 		self.wnd.setGeometry(QRect(100, 100, 400, 400))
 		self.wnd.show()
+		# self.wnd.showFullScreen()
 
 	def shutdown(self):
 		self.exit(0)
