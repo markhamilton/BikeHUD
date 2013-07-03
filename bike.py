@@ -67,6 +67,7 @@ class SensorWidget(QWidget):
 		self.fontSpeed 		= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 	= QFont('Liberation Sans Narrow')
 		self.fontSlowDown	= QFont('Liberation Sans Narrow')
+		self.fontSlipTicks	= QFont('Liberation Sans Narrow')
 
 		self.penBattOutline.setCapStyle(Qt.SquareCap)
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
@@ -137,6 +138,7 @@ class SensorWidget(QWidget):
 		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
 		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
 		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
+		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
 		degSpacer		= 0.5
 		degCoilInterval	= (360 / self.sensors.numCoils)
 		degCoilSpan		= degCoilInterval - (degSpacer * self.sensors.numCoils)
@@ -155,13 +157,28 @@ class SensorWidget(QWidget):
 			pathSlip.arcTo(rcSlipInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 			pathSlip.closeSubpath()
 
+			dc.setPen(self.coilColors[nPath])
+			dc.setFont(self.fontSlipTicks)
+
 			tickMajor = True
 			for tick in range(0, 11):
 				degTickAngle = (nCoil * degCoilInterval) - (tick * 0.1) * degCoilSpan
+
+				# """not necessary for now and buggy (colors for text are phase shifted)"""
+				# if tickMajor:
+				# 	dc.save()
+				# 	dc.translate(clientrect.center())
+				# 	dc.rotate(degTickAngle)
+				# 	dc.translate(QPoint(rcSlipTickMaj.height() / 2 + pad, -fmSlipTicks.height() / 2))
+				# 	dc.drawText(0, 0, str(tick * 10))
+				# 	dc.restore()
+
 				pathSlip.arcMoveTo(rcSlipOuter, degTickAngle)
 				pathSlip.arcTo((rcSlipTickMaj, rcSlipTickMin)[tickMajor], degTickAngle, 0)
 				pathSlip.closeSubpath()
 				tickMajor = not tickMajor
+
+			dc.drawPath(pathSlip)
 
 			# TODO: generate the graph for field power history
 			# pathField.arcMoveTo(rcMagInner, nCoil * degCoilInterval)
@@ -169,9 +186,8 @@ class SensorWidget(QWidget):
 			# 	radPower = radMagInner + (powerLevel / 10) * (radMagOuter - radMagInner)
 			# 	pathField.arcTo()
 
-			dc.setPen(self.coilColors[nPath])
-			dc.drawPath(pathSlip)
 			nCoil += 1
+			
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
@@ -184,6 +200,7 @@ class SensorWidget(QWidget):
 		self.fontSpeed.setPixelSize(dim / 3)
 		self.fontSpeedUnit.setPixelSize(dim / 18)
 		self.fontSlowDown.setPixelSize(dim / 24)
+		self.fontSlipTicks.setPixelSize(dim / 30)
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
