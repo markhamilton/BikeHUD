@@ -29,7 +29,7 @@ class SensorData():
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
-		return '{0:g}'.format(round(self.getSpeed()))
+		return str(round(self.getSpeed()))[:-2]
 
 	def getBatteryPercent(self):
 		return self.battery
