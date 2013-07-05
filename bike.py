@@ -4,6 +4,7 @@
 ## TODO (Housekeeping) ##
 # Break out colors, customizable settings and place them into ConfigSettings
 # Load ConfigSettings from file
+# When rounding the HUD will read -0 sometimes
 
 import sys
 from PyQt4.Qt import *
@@ -11,8 +12,12 @@ from random import random
 from datetime import datetime
 
 class ConfigSettings:
-	numCoils				= 9 # must be a multiple of 3
+	## i18n
 	metric 					= False
+
+	## motor configuration
+	numCoils				= 9 # must be a multiple of 3
+
 
 	## disable antialiasing for smoother performance
 	lineAntialiasing 		= True
@@ -26,7 +31,7 @@ class ConfigSettings:
 class SensorData():
 	def __init__(self):
 		self.coils 			= []
-		self.speed 			= 12
+		self.speed 			= 30
 
 		for ii in range(0, ConfigSettings.numCoils):
 			self.coils.append(MagneticCoil(ii))
@@ -44,7 +49,7 @@ class SensorData():
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
-		return '{0:g}'.format(round(self.getSpeed()))
+		return str(round(self.getSpeed()))[:-2]
 
 	def getBatteryPercent(self):
 		return self.battery
@@ -53,7 +58,7 @@ class SensorData():
 		return self.time
 
 	def updateSensorsHighPriority(self):
-		self.time 			= datetime.now().time()
+		self.time 			= str(datetime.now().time())[:-2]
 
 	def updateSensorsMediumPriority(self):
 		self.speed 			= self.speed + random() * 2.0 - 1.0
@@ -103,6 +108,8 @@ class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
 		self.background 		= QColor(0, 0, 0)
+		self.fontLabel 			= QFont('Liberation Sans Narrow')
+		self.fontNumbering		= QFont('Liberation Sans Narrow')
 
 	def paintEvent(self, e):
 		clientrect 	= self.getClientRect()
@@ -111,6 +118,10 @@ class WiringWidget(QWidget):
 		dc 			= QPainter(self)
 
 		dc.fillRect(clientrect, self.background)
+
+		## create timing grid
+		rcTimingGrid = QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
+		dc.fillRect(rcTimingGrid, Qt.blue)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
