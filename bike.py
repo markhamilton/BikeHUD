@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+## TODO (Housekeeping) ##
+# Break out colors, customizable settings and place them into ConfigSettings
+# Load ConfigSettings from file
+
 import sys
 from PyQt4.Qt import *
 from random import random
@@ -87,6 +91,32 @@ class MagneticCoil():
 		self.powerHistory.append(random() * 10.0)
 		self.powerHistory.pop(0)
 
+class SwitcherWidget(QWidget):
+	def __init__(self, parent=0):
+		QWidget.__init__(self, parent)
+
+		self.btnGroup 	= QButtonGroup(self)
+		self.btnWiring 	= QPushButton(self)
+
+
+class WiringWidget(QWidget):
+	def __init__(self, parent=0):
+		QWidget.__init__(self, parent)
+		self.background 		= QColor(0, 0, 0)
+
+	def paintEvent(self, e):
+		clientrect 	= self.getClientRect()
+		dim 		= clientrect.height()
+		pad 		= dim / 40
+		dc 			= QPainter(self)
+
+		dc.fillRect(clientrect, self.background)
+
+	def getClientRect(self):
+		dim = min(self.width(), self.height())
+		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
+
+
 class SensorWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
@@ -98,6 +128,7 @@ class SensorWidget(QWidget):
 		self.brightMono			= QColor(255, 20, 20)
 		self.darkMono 			= QColor(102, 8, 8)
 		self.magPower 	 		= QColor(246, 7, 72)
+		self.magPowerDark 		= QColor(51, 1, 15)
 		self.penBattOutline		= QPen(self.brightMono, 2)
 
 		## coil colors are: [yellow, green, magenta]
@@ -147,11 +178,11 @@ class SensorWidget(QWidget):
 		self.sensors.updateSensorsVeryLowPriority()
 
 	def paintEvent(self, e):
-		clientrect = self.getClientRect()
-		dim = clientrect.height()
-		pad = dim / 40
+		clientrect 		= self.getClientRect()
+		dim 			= clientrect.height()
+		pad 			= dim / 40
+		dc 				= QPainter(self)
 
-		dc = QPainter(self)
 		dc.fillRect(clientrect, self.background)
 		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
@@ -287,6 +318,7 @@ class SensorWidget(QWidget):
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 
 			dc.setPen(self.magPower)
+			dc.fillPath(pathField, self.magPowerDark)
 			dc.drawPath(pathField)
 
 			nCoil += 1
@@ -311,7 +343,11 @@ class MainWindow(QMainWindow):
 		QMainWindow.__init__(self, *args)
 		self.wnd 		= QWidget(self)
 		self.sensors 	= SensorWidget(self)
-		self.sensors.setGeometry(QRect(0, 0, 480, 480))
+		self.wiring 	= WiringWidget(self)
+
+		self.sensors.setGeometry(QRect(0, 0, ConfigSettings.targetResolution.width() / 2, 480))
+		self.wiring.setGeometry(QRect(ConfigSettings.targetResolution.width() / 2, 0, ConfigSettings.targetResolution.width() / 2, 480))
+
 		# self.setCentralWidget(self.sensors)
 
 

@@ -16,6 +16,7 @@ Alternatively, a phone capable of running python and Qt may be used instead. I a
 ### SOFTWARE REQUIREMENTS
 * Python 2.7 or higher
 * PyQt4
+* Liberation Narrow Font
 
 ### OTHER HARDWARE
 * 3-Phase high-amp PWM Motor Driver.
