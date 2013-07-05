@@ -16,8 +16,9 @@ class ConfigSettings:
 	metric 					= False
 
 	## motor configuration
+	## this just calibrates the HUD; no change to output driver is made
 	numCoils				= 9 # must be a multiple of 3
-
+	motorCurrent			= 9 # in amps
 
 	## disable antialiasing for smoother performance
 	lineAntialiasing 		= True
@@ -107,21 +108,32 @@ class SwitcherWidget(QWidget):
 class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
-		self.background 		= QColor(0, 0, 0)
-		self.fontLabel 			= QFont('Liberation Sans Narrow')
-		self.fontNumbering		= QFont('Liberation Sans Narrow')
+		self.background 	= QColor(0, 0, 0)
+		self.fontLabel 		= QFont('Liberation Sans Narrow')
+		self.fontNumbering	= QFont('Liberation Sans Narrow')
 
 	def paintEvent(self, e):
-		clientrect 	= self.getClientRect()
-		dim 		= clientrect.height()
-		pad 		= dim / 40
-		dc 			= QPainter(self)
+		clientrect 			= self.getClientRect()
+		dim 				= clientrect.height()
+		pad 				= dim / 40
+		dc 					= QPainter(self)
 
 		dc.fillRect(clientrect, self.background)
 
 		## create timing grid
-		rcTimingGrid = QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
-		dc.fillRect(rcTimingGrid, Qt.blue)
+		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
+		rcTimingRange		= QRect(rcTimingGrid.x() + pad, rcTimingGrid.y(), rcTimingGrid.width() - pad, rcTimingGrid.height() - pad)
+		pathTimingRange		= QPainterPath()
+
+		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.y())
+		pathTimingRange.lineTo(rcTimingRange.x(), rcTimingRange.bottomLeft().y())
+		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
+
+		for yy in range(0, 11):
+			pathTimingRange.addText(rcTimingRange.x(), rcTimingRange.y() + (10-yy) / (rcTimingRange.height() - pad), self.fontNumbering, "0 A")
+
+		dc.setPen(Qt.blue)
+		dc.drawPath(pathTimingRange)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
