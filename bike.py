@@ -1,19 +1,40 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+## TODO (Housekeeping) ##
+# Break out colors, customizable settings and place them into ConfigSettings
+# Load ConfigSettings from file
+# When rounding the HUD will read -0 sometimes
+
 import sys
 from PyQt4.Qt import *
 from random import random
 from datetime import datetime
 
-class SensorData():
-	def __init__(self, metric = False):
-		self.numCoils 		= 9 		# must be a multiple of 3
-		self.metric 		= metric
-		self.coils 			= []
-		self.speed 			= 12
+class ConfigSettings:
+	## i18n
+	metric 					= False
 
-		for ii in range(0, self.numCoils):
+	## motor configuration
+	## this just calibrates the HUD; no change to output driver is made
+	numCoils				= 9 # must be a multiple of 3
+	motorCurrent			= 9 # in amps
+
+	## disable antialiasing for smoother performance
+	lineAntialiasing 		= True
+	textAntialiasing 		= True
+
+	## target device resolution will change depending on PC board
+	## this can be set dynamically instead if needed but I kept it fixed for ease of testing
+	targetResolution = QRect(100, 100, 800, 480)
+
+
+class SensorData():
+	def __init__(self):
+		self.coils 			= []
+		self.speed 			= 30
+
+		for ii in range(0, ConfigSettings.numCoils):
 			self.coils.append(MagneticCoil(ii))
 
 		self.updateSensorsHighPriority()
@@ -22,10 +43,10 @@ class SensorData():
 
 	def isSpeedDangerous(self):
 		# safe limit is 30mph / 48kph
-		return self.getSpeed() > (30, 48)[self.metric]
+		return self.getSpeed() > (30, 48)[ConfigSettings.metric]
 
 	def getSpeed(self):
-		currentSpeed = self.speed * (1, 1.609344)[self.metric]
+		currentSpeed = self.speed * (1, 1.609344)[ConfigSettings.metric]
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
@@ -38,7 +59,7 @@ class SensorData():
 		return self.time
 
 	def updateSensorsHighPriority(self):
-		self.time 			= datetime.now().time()
+		self.time 			= str(datetime.now().time())[:-2]
 
 	def updateSensorsMediumPriority(self):
 		self.speed 			= self.speed + random() * 2.0 - 1.0
@@ -48,6 +69,8 @@ class SensorData():
 
 	def updateSensorsLowPriority(self):
 		self.date 			= datetime.now().date()
+
+	def updateSensorsVeryLowPriority(self):
 		self.battery 		= random() * 100.0
 
 	def getDate(self):
@@ -74,21 +97,61 @@ class MagneticCoil():
 		self.powerHistory.append(random() * 10.0)
 		self.powerHistory.pop(0)
 
+class SwitcherWidget(QWidget):
+	def __init__(self, parent=0):
+		QWidget.__init__(self, parent)
+
+		self.btnGroup 	= QButtonGroup(self)
+		self.btnWiring 	= QPushButton(self)
+
+
+class WiringWidget(QWidget):
+	def __init__(self, parent=0):
+		QWidget.__init__(self, parent)
+		self.background 	= QColor(0, 0, 0)
+		self.fontLabel 		= QFont('Liberation Sans Narrow')
+		self.fontNumbering	= QFont('Liberation Sans Narrow')
+
+	def paintEvent(self, e):
+		clientrect 			= self.getClientRect()
+		dim 				= clientrect.height()
+		pad 				= dim / 40
+		dc 					= QPainter(self)
+
+		dc.fillRect(clientrect, self.background)
+
+		## create timing grid
+		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
+		rcTimingRange		= QRect(rcTimingGrid.x() + pad, rcTimingGrid.y(), rcTimingGrid.width() - pad, rcTimingGrid.height() - pad)
+		pathTimingRange		= QPainterPath()
+
+		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.y())
+		pathTimingRange.lineTo(rcTimingRange.x(), rcTimingRange.bottomLeft().y())
+		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
+
+		for yy in range(0, 11):
+			pathTimingRange.addText(rcTimingRange.x(), rcTimingRange.y() + (10-yy) / (rcTimingRange.height() - pad), self.fontNumbering, "0 A")
+
+		dc.setPen(Qt.blue)
+		dc.drawPath(pathTimingRange)
+
+	def getClientRect(self):
+		dim = min(self.width(), self.height())
+		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
+
+
 class SensorWidget(QWidget):
-	def __init__(self):
-		QWidget.__init__(self)
+	def __init__(self, parent=0):
+		QWidget.__init__(self, parent)
 
-		self.sensors 			= SensorData(False)
-
-		## disable antialiasing for smoother performance
-		self.lineAntialiasing 	= True
-		self.textAntialiasing 	= True
+		self.sensors 			= SensorData()
 
 		## tweak colors to your preference
 		self.background 		= QColor(0, 0, 0)
 		self.brightMono			= QColor(255, 20, 20)
 		self.darkMono 			= QColor(102, 8, 8)
 		self.magPower 	 		= QColor(246, 7, 72)
+		self.magPowerDark 		= QColor(51, 1, 15)
 		self.penBattOutline		= QPen(self.brightMono, 2)
 
 		## coil colors are: [yellow, green, magenta]
@@ -109,17 +172,20 @@ class SensorWidget(QWidget):
 		self.penBattOutline.setJoinStyle(Qt.MiterJoin)
 
 		## set timers to update sensors
-		self.timerLow 			= QTimer()
-		self.timerMedium		= QTimer()
 		self.timerHigh 			= QTimer()
+		self.timerMedium		= QTimer()
+		self.timerLow 			= QTimer()
+		self.timerVeryLow		= QTimer()
 
 		self.timerHigh.timeout.connect(self.updateHighPriority)
 		self.timerMedium.timeout.connect(self.updateMediumPriorty)
 		self.timerLow.timeout.connect(self.updateLowPriority)
+		self.timerVeryLow.timeout.connect(self.updateVeryLowPriority)
 		
 		self.timerHigh.start(10)
 		self.timerMedium.start(600)
 		self.timerLow.start(2000)
+		self.timerVeryLow.start(2 * 60 * 2000) # 2 minutes
 
 	def updateHighPriority(self):
 		self.sensors.updateSensorsHighPriority()
@@ -131,21 +197,23 @@ class SensorWidget(QWidget):
 	def updateLowPriority(self):
 		self.sensors.updateSensorsLowPriority()
 
-	def paintEvent(self, e):
-		clientrect = self.getClientRect()
-		dim = clientrect.height()
-		pad = dim / 40
+	def updateVeryLowPriority(self):
+		self.sensors.updateSensorsVeryLowPriority()
 
-		dc = QPainter(self)
-		dc.drawRect(QRect(0, 0, self.width(), self.height()))
+	def paintEvent(self, e):
+		clientrect 		= self.getClientRect()
+		dim 			= clientrect.height()
+		pad 			= dim / 40
+		dc 				= QPainter(self)
+
 		dc.fillRect(clientrect, self.background)
-		dc.setRenderHint(QPainter.Antialiasing, self.lineAntialiasing)
-		dc.setRenderHint(QPainter.TextAntialiasing, self.textAntialiasing)
+		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
+		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
 		dc.setPen(self.brightMono)
 
 		## draw odometer
 		strSpeed 		= self.sensors.getSpeedString()
-		strSpeedUnit 	= ("mph", "kph")[self.sensors.metric]
+		strSpeedUnit 	= ("mph", "kph")[ConfigSettings.metric]
 
 		dc.setFont(self.fontSpeed)
 		fmSpeed 		= QFontMetrics(self.fontSpeed)
@@ -207,9 +275,9 @@ class SensorWidget(QWidget):
 		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
 		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
 		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
-		degSpacer		= (5.5 / self.sensors.numCoils, 0.0)[self.sensors.numCoils >= 60]
-		degCoilInterval	= (360 / self.sensors.numCoils)
-		degCoilSpan		= degCoilInterval - (degSpacer * self.sensors.numCoils)
+		degSpacer		= (5.5 / ConfigSettings.numCoils, 0.0)[ConfigSettings.numCoils >= 60]
+		degCoilInterval	= (360 / ConfigSettings.numCoils)
+		degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.numCoils)
 
 		## Draw coil slip, and then magnetic field strength
 		nCoil = 0
@@ -273,6 +341,7 @@ class SensorWidget(QWidget):
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 
 			dc.setPen(self.magPower)
+			dc.fillPath(pathField, self.magPowerDark)
 			dc.drawPath(pathField)
 
 			nCoil += 1
@@ -296,9 +365,13 @@ class MainWindow(QMainWindow):
 	def __init__(self, *args):
 		QMainWindow.__init__(self, *args)
 		self.wnd 		= QWidget(self)
-		self.sensors 	= SensorWidget()
+		self.sensors 	= SensorWidget(self)
+		self.wiring 	= WiringWidget(self)
 
-		self.setCentralWidget(self.sensors)
+		self.sensors.setGeometry(QRect(0, 0, ConfigSettings.targetResolution.width() / 2, 480))
+		self.wiring.setGeometry(QRect(ConfigSettings.targetResolution.width() / 2, 0, ConfigSettings.targetResolution.width() / 2, 480))
+
+		# self.setCentralWidget(self.sensors)
 
 
 class BikeHudApp(QApplication):
@@ -311,7 +384,7 @@ class BikeHudApp(QApplication):
 
 		self.wnd = MainWindow()
 		self.connect(self, SIGNAL("lastWindowClosed()"), self.shutdown)
-		self.wnd.setGeometry(QRect(100, 100, 800, 480))
+		self.wnd.setGeometry(ConfigSettings.targetResolution)
 		self.wnd.show()
 		# self.wnd.showFullScreen()
 
