@@ -109,8 +109,8 @@ class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
 		self.background 	= QColor(0, 0, 0)
-		self.fontLabel 		= QFont('Liberation Sans Narrow')
-		self.fontNumbering	= QFont('Liberation Sans Narrow')
+		self.fontLabel 		= QFont('Liberation Mono')
+		self.fontValues		= QFont('Liberation Sans Narrow')
 
 	def paintEvent(self, e):
 		clientrect 			= self.getClientRect()
@@ -121,16 +121,27 @@ class WiringWidget(QWidget):
 		dc.fillRect(clientrect, self.background)
 
 		## create timing grid
+		fmTickValues		= QFontMetrics(self.fontValues)
+		pxTickMaxStrW		= fmTickValues.width(str(float(ConfigSettings.motorCurrent)))
+		pxTickMaxStrH		= fmTickValues.height()
 		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
-		rcTimingRange		= QRect(rcTimingGrid.x() + pad, rcTimingGrid.y(), rcTimingGrid.width() - pad, rcTimingGrid.height() - pad)
+		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
+
+		dc.fillRect(rcTimingGrid, Qt.gray)
 
 		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.y())
 		pathTimingRange.lineTo(rcTimingRange.x(), rcTimingRange.bottomLeft().y())
 		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
 
-		for yy in range(0, 11):
-			pathTimingRange.addText(rcTimingRange.x(), rcTimingRange.y() + (10-yy) / (rcTimingRange.height() - pad), self.fontNumbering, "0 A")
+		gridSteps 			= 11
+		for yy in range(0, gridSteps):
+			pxTickY 		= rcTimingRange.y() + (gridSteps - yy) * ((rcTimingRange.height() - pad)) / 11
+			strAmps			= str(round((float(yy) / float(gridSteps)) * ConfigSettings.motorCurrent, 1)) + " A"
+
+			fmTickValues.width(strAmps)
+			pathTimingRange.moveTo(rcTimingGrid.x() + pxTickMaxStrW, pxTickY)
+			pathTimingRange.lineTo(rcTimingRange.x(), pxTickY)
 
 		dc.setPen(Qt.blue)
 		dc.drawPath(pathTimingRange)
