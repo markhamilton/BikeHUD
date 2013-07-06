@@ -33,8 +33,6 @@ class ConfigSettings:
 	coilColors 				= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
 	coilColorsDark			= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
 
-
-
 class SensorData():
 	def __init__(self):
 		self.coils 			= []
@@ -131,7 +129,7 @@ class WiringWidget(QWidget):
 
 		dc.fillRect(clientrect, self.background)
 
-		## create timing grid
+		## create timing graph
 		fmTickValues		= QFontMetrics(self.fontValues)
 		pxTickMaxStrW		= fmTickValues.width(str(round(float(ConfigSettings.motorCurrent))) + " A")
 		pxTickMaxStrH		= fmTickValues.height()
@@ -146,6 +144,9 @@ class WiringWidget(QWidget):
 		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
 
 		gridSteps 			= 10
+		self.fontValues.setPixelSize(rcTimingRange.height() / (gridSteps + 5))
+		dc.setFont(self.fontValues)
+
 		for yy in range(0, gridSteps):
 			tickValue 		= round((float(yy) / float(gridSteps - 1)) * ConfigSettings.motorCurrent, 1)
 			pxTickY 		= float(rcTimingRange.y()) + float(gridSteps - yy - 1) * float((rcTimingRange.height())) / float(gridSteps - 1) - 1
@@ -158,6 +159,9 @@ class WiringWidget(QWidget):
 			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW + pad, pxTickMaxStrH), Qt.AlignVCenter, strAmps)
 
 		dc.drawPath(pathTimingRange)
+
+		## create coil wiring diagram
+
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
