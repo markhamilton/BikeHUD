@@ -26,7 +26,13 @@ class ConfigSettings:
 
 	## target device resolution will change depending on PC board
 	## this can be set dynamically instead if needed but I kept it fixed for ease of testing
-	targetResolution = QRect(100, 100, 800, 480)
+	targetResolution 		= QRect(100, 100, 800, 480)
+
+	## coil colors are: [yellow, green, magenta]
+	coilColorsBright		= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
+	coilColors 				= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
+	coilColorsDark			= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
+
 
 
 class SensorData():
@@ -109,8 +115,13 @@ class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
 		self.background 	= QColor(0, 0, 0)
+
+		## fonts
 		self.fontLabel 		= QFont('Liberation Mono')
 		self.fontValues		= QFont('Liberation Sans Narrow')
+
+		## styles
+		self.dottedLine 	= QPen(Qt.blue, 1, Qt.DotLine)
 
 	def paintEvent(self, e):
 		clientrect 			= self.getClientRect()
@@ -122,28 +133,30 @@ class WiringWidget(QWidget):
 
 		## create timing grid
 		fmTickValues		= QFontMetrics(self.fontValues)
-		pxTickMaxStrW		= fmTickValues.width(str(float(ConfigSettings.motorCurrent)))
+		pxTickMaxStrW		= fmTickValues.width(str(round(float(ConfigSettings.motorCurrent))) + " A")
 		pxTickMaxStrH		= fmTickValues.height()
 		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
 
-		dc.fillRect(rcTimingGrid, Qt.gray)
+		dc.setPen(self.dottedLine)
 
 		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.y())
 		pathTimingRange.lineTo(rcTimingRange.x(), rcTimingRange.bottomLeft().y())
 		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
 
-		gridSteps 			= 11
+		gridSteps 			= 10
 		for yy in range(0, gridSteps):
-			pxTickY 		= rcTimingRange.y() + (gridSteps - yy) * ((rcTimingRange.height() - pad)) / 11
-			strAmps			= str(round((float(yy) / float(gridSteps)) * ConfigSettings.motorCurrent, 1)) + " A"
+			tickValue 		= round((float(yy) / float(gridSteps - 1)) * ConfigSettings.motorCurrent, 1)
+			pxTickY 		= float(rcTimingRange.y()) + float(gridSteps - yy - 1) * float((rcTimingRange.height())) / float(gridSteps - 1) - 1
+			strAmps			= str(tickValue) + " A"
 
 			fmTickValues.width(strAmps)
 			pathTimingRange.moveTo(rcTimingGrid.x() + pxTickMaxStrW, pxTickY)
 			pathTimingRange.lineTo(rcTimingRange.x(), pxTickY)
 
-		dc.setPen(Qt.blue)
+			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW + pad, pxTickMaxStrH), Qt.AlignVCenter, strAmps)
+
 		dc.drawPath(pathTimingRange)
 
 	def getClientRect(self):
@@ -164,11 +177,6 @@ class SensorWidget(QWidget):
 		self.magPower 	 		= QColor(246, 7, 72)
 		self.magPowerDark 		= QColor(51, 1, 15)
 		self.penBattOutline		= QPen(self.brightMono, 2)
-
-		## coil colors are: [yellow, green, magenta]
-		self.coilColorsBright	= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
-		self.coilColors 		= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
-		self.coilColorsDark		= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
 
 		## tweak fonts to your preference (you need a narrow font!)
 		self.fontSpeed 			= QFont('Liberation Sans Narrow')
@@ -306,7 +314,7 @@ class SensorWidget(QWidget):
 			pathSlip.closeSubpath()
 
 			## disabled: change the brush and font for tick values
-			# dc.setPen(self.coilColors[nPath])
+			# dc.setPen(ConfigSettings.coilColors[nPath])
 			# dc.setFont(self.fontSlipTicks)
 
 			tickMajor = True
@@ -333,9 +341,9 @@ class SensorWidget(QWidget):
 				pathSlip.closeSubpath()
 				tickMajor = not tickMajor
 
-			dc.setPen(QPen(self.coilColorsDark[nPath], 1, Qt.DotLine))
+			dc.setPen(QPen(ConfigSettings.coilColorsDark[nPath], 1, Qt.DotLine))
 			dc.drawPath(pathSlipGrid)
-			dc.setPen(self.coilColorsBright[nPath])
+			dc.setPen(ConfigSettings.coilColorsBright[nPath])
 			dc.drawPath(pathSlip)
 
 			## generate the graph for field power history
