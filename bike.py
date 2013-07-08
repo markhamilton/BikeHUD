@@ -6,20 +6,23 @@
 # Load ConfigSettings from file
 
 import sys
+import math
 from PyQt4.Qt import *
 from random import random
 from datetime import datetime
 
+## Soon I will be moving these to a configuration file, but these will remain the defaults
 class ConfigSettings:
 	## i18n
 	metric 					= False
 
 	## motor configuration
 	## this just calibrates the HUD; no change to output driver is made
-	numCoils				= 9 # must be a multiple of 3
-	motorCurrent			= 9 # in amps
+	numCoils				= 9 		# must be a multiple of 3
+	motorCurrent			= 9 		# in amps
+	motorVoltage			= 300 		# in volts, obv
 
-	## disable antialiasing for smoother performance
+	## disable antialiasing for smoother performance possibly
 	lineAntialiasing 		= True
 	textAntialiasing 		= True
 
@@ -123,6 +126,7 @@ class WiringWidget(QWidget):
 
 		## styles
 		self.dottedLine 	= QPen(Qt.blue, 1, Qt.DotLine)
+		self.solidLine		= QPen(Qt.blue, 1)
 
 	def paintEvent(self, e):
 		clientrect 			= self.getClientRect()
@@ -134,26 +138,28 @@ class WiringWidget(QWidget):
 
 		## create timing graph
 		fmTickValues		= QFontMetrics(self.fontValues)
-		pxTickMaxStrW		= fmTickValues.width(str(round(float(ConfigSettings.motorCurrent))) + " A")
+		strTickUnit 		= "A"
+		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit)
 		pxTickMaxStrH		= fmTickValues.height()
 		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
 
+		## draw the range lines
 		dc.setPen(self.dottedLine)
-
 		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.y())
 		pathTimingRange.lineTo(rcTimingRange.x(), rcTimingRange.bottomLeft().y())
-		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.bottomRight().y())
+		pathTimingRange.moveTo(rcTimingRange.x(), rcTimingRange.center().y())
+		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.center().y())
 
-		gridSteps 			= 10
+		## draw y-axis tick marks & values
+		gridSteps 			= 11
 		self.fontValues.setPixelSize(rcTimingRange.height() / (gridSteps + 5))
 		dc.setFont(self.fontValues)
-
 		for yy in range(0, gridSteps):
-			tickValue 		= round((float(yy) / float(gridSteps - 1)) * ConfigSettings.motorCurrent, 1)
+			tickValue 		= round((float(yy) / float(gridSteps - 1) * 2) * ConfigSettings.motorCurrent, 1) - ConfigSettings.motorCurrent
 			pxTickY 		= float(rcTimingRange.y()) + float(gridSteps - yy - 1) * float((rcTimingRange.height())) / float(gridSteps - 1) - 1
-			strAmps			= str(tickValue) + " A"
+			strAmps			= str(tickValue) + " " + strTickUnit
 
 			fmTickValues.width(strAmps)
 			pathTimingRange.moveTo(rcTimingGrid.x() + pxTickMaxStrW, pxTickY)
@@ -162,6 +168,33 @@ class WiringWidget(QWidget):
 			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW + pad, pxTickMaxStrH), Qt.AlignVCenter, strAmps)
 
 		dc.drawPath(pathTimingRange)
+
+		## plot sine waves
+		for phase in range(0, 3):
+			pathPhaseOutput = QPainterPath()
+			degPhaseOffset	= phase * 120.0
+
+			pxRangeLower	= rcTimingRange.x()
+			pxRangeUpper 	= rcTimingRange.x() + rcTimingRange.width()
+			pxRange 		= pxRangeUpper - pxRangeLower
+			firstPoint		= True
+			for xx in range(pxRangeLower + 1, pxRangeUpper):
+				degPhase 	= (float(xx - pxRangeLower + 1) / float(pxRange) * 360.0) + degPhaseOffset
+				rdPhase		= degPhase * math.pi / 180.0
+				amplitude 	= -math.sin(rdPhase) * rcTimingRange.height() / 2.0
+
+				if firstPoint == True:
+					pathPhaseOutput.moveTo(xx, rcTimingRange.center().y() + amplitude)
+					firstPoint = False
+
+				pathPhaseOutput.lineTo(xx, rcTimingRange.center().y() + amplitude)
+
+			## disabled: Fill in the paths with a translucent brush: doesn't look all that great
+			# brFill			= QColor(ConfigSettings.coilColorsBright[phase].red(), ConfigSettings.coilColorsBright[phase].green(), ConfigSettings.coilColorsBright[phase].blue(), 100)
+			# pathPhaseOutput.lineTo(rcTimingRange.topRight().x(), rcTimingRange.center().y())
+			# dc.fillPath(pathPhaseOutput, brFill)
+			dc.setPen(ConfigSettings.coilColorsBright[phase])
+			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
 
