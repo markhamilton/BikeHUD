@@ -390,12 +390,11 @@ class MainWindow(QMainWindow):
 		self.wnd 		= QWidget(self)
 		self.sensors 	= SensorWidget(self)
 		self.wiring 	= WiringWidget(self)
-
-		self.sensors.setGeometry(QRect(0, 0, ConfigSettings.targetResolution.width() / 2, 480))
-		self.wiring.setGeometry(QRect(ConfigSettings.targetResolution.width() / 2, 0, ConfigSettings.targetResolution.width() / 2, 480))
-
 		# self.setCentralWidget(self.sensors)
 
+	def resizeEvent(self, e):
+		self.sensors.setGeometry(QRect(0, 0, self.width() / 2, self.height()))
+		self.wiring.setGeometry(QRect(self.width() / 2, 0, self.width() / 2, self.height()))
 
 class BikeHudApp(QApplication):
 	def __init__(self, *args):
