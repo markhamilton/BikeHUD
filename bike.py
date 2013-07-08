@@ -110,9 +110,17 @@ class MagneticCoil():
 class SwitcherWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
+		Self.background = QColor(0, 0, 0)
 
 		self.btnGroup 	= QButtonGroup(self)
 		self.btnWiring 	= QPushButton(self)
+
+	def paintEvent(self, e):
+		clientrect 			= QRect(0, 0, self.width(), self.height())
+		pad 				= dim / 40
+		dc 					= QPainter(self)
+
+		dc.fillRect(clientrect, self.background)
 
 
 class WiringWidget(QWidget):
@@ -139,9 +147,9 @@ class WiringWidget(QWidget):
 		## create timing graph
 		fmTickValues		= QFontMetrics(self.fontValues)
 		strTickUnit 		= "A"
-		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit)
+		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit) + 2
 		pxTickMaxStrH		= fmTickValues.height()
-		rcTimingGrid 		= QRect(clientrect.width() / 10, clientrect.height() / 2, clientrect.width() * 0.8, clientrect.height() / 2)
+		rcTimingGrid 		= QRect((clientrect.width() / 10) + clientrect.left(), (clientrect.height() / 2) + clientrect.top(), clientrect.width() * 0.8, clientrect.height() / 2)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
 
@@ -165,7 +173,7 @@ class WiringWidget(QWidget):
 			pathTimingRange.moveTo(rcTimingGrid.x() + pxTickMaxStrW, pxTickY)
 			pathTimingRange.lineTo(rcTimingRange.x(), pxTickY)
 
-			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW + pad, pxTickMaxStrH), Qt.AlignVCenter, strAmps)
+			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW - 2, pxTickMaxStrH), Qt.AlignVCenter | Qt.AlignRight, strAmps)
 
 		dc.drawPath(pathTimingRange)
 
@@ -197,7 +205,7 @@ class WiringWidget(QWidget):
 			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
-
+		rcCoil				= QRect()
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
