@@ -107,17 +107,37 @@ class MagneticCoil():
 		self.powerHistory.append(random() * 10.0)
 		self.powerHistory.pop(0)
 
+
+class ButtonWidget(QAbstractButton):
+	def __init__(self, text, parent = 0):
+		QWidget.__init__(self, parent)
+		self.setText(text)
+
+	def paintEvent(self, e):
+		clientrect 			= QRect(0, 0, self.width() - 1, self.height() - 1)
+		dc 					= QPainter(self)
+
+		# dc.fillRect(clientrect, QColor(0, 0, 0))
+		dc.setPen(QColor(255, 255, 255))
+		dc.drawRect(clientrect)
+
+		dc.drawText(clientrect, Qt.AlignCenter, self.text())
+
+
 class SwitcherWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
-		Self.background = QColor(0, 0, 0)
+		self.background 	= QColor(0, 0, 0)
 
-		self.btnGroup 	= QButtonGroup(self)
-		self.btnWiring 	= QPushButton(self)
+		self.btnGroup 		= QButtonGroup(self)
+		self.btnMap	 		= ButtonWidget("MAP", self)
+		self.btnWiring 		= ButtonWidget("WIRE", self)
+
+		self.btnGroup.addButton(self.btnMap)
+		self.btnGroup.addButton(self.btnWiring)
 
 	def paintEvent(self, e):
 		clientrect 			= QRect(0, 0, self.width(), self.height())
-		pad 				= dim / 40
 		dc 					= QPainter(self)
 
 		dc.fillRect(clientrect, self.background)
@@ -434,11 +454,15 @@ class MainWindow(QMainWindow):
 		self.wnd 		= QWidget(self)
 		self.sensors 	= SensorWidget(self)
 		self.wiring 	= WiringWidget(self)
+		self.switcher 	= SwitcherWidget(self)
 		# self.setCentralWidget(self.sensors)
 
 	def resizeEvent(self, e):
-		self.sensors.setGeometry(QRect(0, 0, self.width() / 2, self.height()))
-		self.wiring.setGeometry(QRect(self.width() / 2, 0, self.width() / 2, self.height()))
+		pxSwitcherHeight = 80
+
+		self.sensors.setGeometry(QRect(0, 0, self.width() / 2, self.height() - pxSwitcherHeight))
+		self.wiring.setGeometry(QRect(self.width() / 2, 0, self.width() / 2, self.height() - pxSwitcherHeight))
+		self.switcher.setGeometry(QRect(0, self.height() - pxSwitcherHeight, self.width(), pxSwitcherHeight))
 
 class BikeHudApp(QApplication):
 	def __init__(self, *args):
