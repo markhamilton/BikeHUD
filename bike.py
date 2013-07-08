@@ -2,9 +2,8 @@
 #-*- coding: utf-8 -*-
 
 ## TODO (Housekeeping) ##
-# Break out colors, customizable settings and place them into ConfigSettings
+# Break out colors and place them into ConfigSettings
 # Load ConfigSettings from file
-# When rounding the HUD will read -0 sometimes
 
 import sys
 from PyQt4.Qt import *
@@ -54,7 +53,11 @@ class SensorData():
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
-		return str(round(self.getSpeed()))[:-2]
+		strSpeed = str(round(self.getSpeed()))[:-2]
+		if strSpeed == "-0":
+			return "0"
+		else:
+			return strSpeed
 
 	def getBatteryPercent(self):
 		return self.battery
