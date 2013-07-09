@@ -231,9 +231,27 @@ class WiringWidget(QWidget):
 			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
-		rcCoil				= QRect(rcTimingGrid.x(), clientrect.y(), rcTimingGrid.width(), rcTimingGrid.height() - pad)
+		rcCoil				= QRectF(rcTimingGrid.x(), clientrect.y(), rcTimingGrid.width(), rcTimingGrid.height() - pad)
+		dimCoil 			= min(rcCoil.width(), rcCoil.height())
+		rcCoilSquare		= QRectF(rcCoil.x(), rcCoil.y(), dimCoil, dimCoil)
 
-		dc.fillRect(rcCoil, Qt.blue)
+		for phase in range(0, 3):
+			pathCoil		= QPainterPath()
+			degSpacer		= (5.5 / ConfigSettings.numCoils, 0.0)[ConfigSettings.numCoils >= 60]
+			degCoilInterval	= (360 / ConfigSettings.numCoils)
+			degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.numCoils)
+			degCoilOffset	= degCoilInterval * phase
+
+			pathCoil.arcMoveTo(rcCoilSquare, degCoilOffset)
+			ptOutputTrace 	= pathCoil.currentPosition()
+
+			pathCoil.moveTo(rcCoilSquare.topRight().x(), rcCoilSquare.topRight().y() + (2 - phase) * 10)
+			pathCoil.lineTo(ptOutputTrace)
+			pathCoil.arcTo(rcCoilSquare, degCoilOffset, -1)
+
+			dc.setPen(ConfigSettings.coilColorsBright[phase])
+			dc.drawPath(pathCoil)
+
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
