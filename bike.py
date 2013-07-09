@@ -163,15 +163,19 @@ class WiringWidget(QWidget):
 		dc 					= QPainter(self)
 
 		dc.fillRect(clientrect, self.background)
+		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
+		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 
 		## create timing graph
 		fmTickValues		= QFontMetrics(self.fontValues)
+		gridSteps 			= 11
 		strTickUnit 		= "A"
 		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit) + 2
 		pxTickMaxStrH		= fmTickValues.height()
-		rcTimingGrid 		= QRect((clientrect.width() / 10) + clientrect.left(), (clientrect.height() / 2) + clientrect.top(), clientrect.width() * 0.8, clientrect.height() / 2)
+		rcTimingGrid 		= QRect(clientrect.left(), (clientrect.height() / 2) + clientrect.top() + pad, clientrect.width(), clientrect.height() / 2)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
+
 
 		## draw the range lines
 		dc.setPen(self.dottedLine)
@@ -181,8 +185,6 @@ class WiringWidget(QWidget):
 		pathTimingRange.lineTo(rcTimingRange.bottomRight().x(), rcTimingRange.center().y())
 
 		## draw y-axis tick marks & values
-		gridSteps 			= 11
-		self.fontValues.setPixelSize(rcTimingRange.height() / (gridSteps + 5))
 		dc.setFont(self.fontValues)
 		for yy in range(0, gridSteps):
 			tickValue 		= round((float(yy) / float(gridSteps - 1) * 2) * ConfigSettings.motorCurrent, 1) - ConfigSettings.motorCurrent
@@ -195,7 +197,10 @@ class WiringWidget(QWidget):
 
 			dc.drawText(QRect(rcTimingGrid.x(), pxTickY - pxTickMaxStrH / 2, pxTickMaxStrW - 2, pxTickMaxStrH), Qt.AlignVCenter | Qt.AlignRight, strAmps)
 
+		## these are dotted so we don't want them to have AA
+		dc.setRenderHint(QPainter.Antialiasing, False)
 		dc.drawPath(pathTimingRange)
+		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 
 		## plot sine waves
 		for phase in range(0, 3):
@@ -206,7 +211,7 @@ class WiringWidget(QWidget):
 			pxRangeUpper 	= rcTimingRange.x() + rcTimingRange.width()
 			pxRange 		= pxRangeUpper - pxRangeLower
 			firstPoint		= True
-			for xx in range(pxRangeLower + 1, pxRangeUpper):
+			for xx in range(pxRangeLower + 1, pxRangeUpper, 3):
 				degPhase 	= (float(xx - pxRangeLower + 1) / float(pxRange) * 360.0) + degPhaseOffset
 				rdPhase		= degPhase * math.pi / 180.0
 				amplitude 	= -math.sin(rdPhase) * rcTimingRange.height() / 2.0
@@ -217,19 +222,26 @@ class WiringWidget(QWidget):
 
 				pathPhaseOutput.lineTo(xx, rcTimingRange.center().y() + amplitude)
 
-			## disabled: Fill in the paths with a translucent brush: doesn't look all that great
+			## disabled: Fill in the paths with a translucent brush (doesn't look all that great)
 			# brFill			= QColor(ConfigSettings.coilColorsBright[phase].red(), ConfigSettings.coilColorsBright[phase].green(), ConfigSettings.coilColorsBright[phase].blue(), 100)
 			# pathPhaseOutput.lineTo(rcTimingRange.topRight().x(), rcTimingRange.center().y())
 			# dc.fillPath(pathPhaseOutput, brFill)
+
 			dc.setPen(ConfigSettings.coilColorsBright[phase])
 			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
-		rcCoil				= QRect()
+		rcCoil				= QRect(rcTimingGrid.x(), clientrect.y(), rcTimingGrid.width(), rcTimingGrid.height() - pad)
+
+		dc.fillRect(rcCoil, Qt.blue)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
 		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
+
+	def resizeEvent(self, e):
+		dim = min(self.width(), self.height())
+		self.fontValues.setPixelSize(dim / 28)
 
 
 class SensorWidget(QWidget):
