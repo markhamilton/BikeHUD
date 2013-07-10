@@ -238,7 +238,6 @@ class WiringWidget(QWidget):
 		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
 		degSpacer			= (10 / ConfigSettings.numCoils)
 		degCoilInterval		= (360 / ConfigSettings.numCoils)
-		degInteriorSpacer	= degSpacer / 3
 
 		for phase in range(0, 3):
 			pathCoil		= QPainterPath()
@@ -251,14 +250,20 @@ class WiringWidget(QWidget):
 			pxWireStartX	= rcCoilSquare.topRight().x() + dim / 3
 			radWireStart 	= dim / 60
 
-			## start adding the paths for the coil wraps
+			## start with the 3-phase input lines
 			pathCoil.moveTo(pxWireStartX, pxWireStartY) 
 			pathCoil.lineTo(ptOutputTrace.x(), pxWireStartY)
-			pathCoil.arcTo(rcCoilSquare, degCoilOffset, -degCoilSpan)
-			pathCoil.arcTo(rcCoilInner, degCoilOffset - degCoilSpan, 0)
-			pathCoil.arcTo(rcCoilInner, degCoilOffset - degCoilSpan, degCoilSpan - degInteriorSpacer)
-			pathCoil.arcTo(rcCoilSquare, degCoilOffset - degInteriorSpacer, 0)
+
+			## start adding the paths for the coil wraps
+			for magnet in range(0, ConfigSettings.numCoils / 3):
+				degMagnetOffset = degCoilOffset + magnet * 3 * degCoilSpan
+				pathCoil.arcTo(rcCoilSquare, degMagnetOffset, -degCoilSpan)
+				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, 0)
+				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, degCoilSpan)
+				pathCoil.arcTo(rcCoilSquare, degMagnetOffset, 0)
+				if magnet == 1: break
 			
+			## draw the wiring paths and terminal connectors for each coil
 			dc.setPen(ConfigSettings.coilColorsBright[phase])
 			dc.drawPath(pathCoil)
 			dc.drawEllipse(pxWireStartX - radWireStart / 2, pxWireStartY - radWireStart / 2, radWireStart, radWireStart)
