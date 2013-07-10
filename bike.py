@@ -233,25 +233,35 @@ class WiringWidget(QWidget):
 		## create coil wiring diagram
 		rcCoil				= QRectF(rcTimingGrid.x(), clientrect.y(), rcTimingGrid.width(), rcTimingGrid.height() - pad)
 		dimCoil 			= min(rcCoil.width(), rcCoil.height())
+		dimInner			= dimCoil * 0.8
 		rcCoilSquare		= QRectF(rcCoil.x(), rcCoil.y(), dimCoil, dimCoil)
+		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
+		degSpacer			= (10 / ConfigSettings.numCoils)
+		degCoilInterval		= (360 / ConfigSettings.numCoils)
+		degInteriorSpacer	= degSpacer / 3
 
 		for phase in range(0, 3):
 			pathCoil		= QPainterPath()
-			degSpacer		= (5.5 / ConfigSettings.numCoils, 0.0)[ConfigSettings.numCoils >= 60]
-			degCoilInterval	= (360 / ConfigSettings.numCoils)
 			degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.numCoils)
 			degCoilOffset	= degCoilInterval * phase
 
 			pathCoil.arcMoveTo(rcCoilSquare, degCoilOffset)
-			ptOutputTrace 	= pathCoil.currentPosition()
+			ptOutputTrace 	= QPointF(rcCoilSquare.topRight().x() + (2 - phase) * (dim / 30) + (dim / 60), rcCoilSquare.topRight().y())
+			pxWireStartY	= round(rcCoilSquare.topRight().y() + (3 - phase) * (dim / 30) + 1)
+			pxWireStartX	= rcCoilSquare.topRight().x() + dim / 3
+			radWireStart 	= dim / 60
 
-			pathCoil.moveTo(rcCoilSquare.topRight().x(), rcCoilSquare.topRight().y() + (2 - phase) * 10)
-			pathCoil.lineTo(ptOutputTrace)
-			pathCoil.arcTo(rcCoilSquare, degCoilOffset, -1)
-
+			## start adding the paths for the coil wraps
+			pathCoil.moveTo(pxWireStartX, pxWireStartY) 
+			pathCoil.lineTo(ptOutputTrace.x(), pxWireStartY)
+			pathCoil.arcTo(rcCoilSquare, degCoilOffset, -degCoilSpan)
+			pathCoil.arcTo(rcCoilInner, degCoilOffset - degCoilSpan, 0)
+			pathCoil.arcTo(rcCoilInner, degCoilOffset - degCoilSpan, degCoilSpan - degInteriorSpacer)
+			pathCoil.arcTo(rcCoilSquare, degCoilOffset - degInteriorSpacer, 0)
+			
 			dc.setPen(ConfigSettings.coilColorsBright[phase])
 			dc.drawPath(pathCoil)
-
+			dc.drawEllipse(pxWireStartX - radWireStart / 2, pxWireStartY - radWireStart / 2, radWireStart, radWireStart)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
