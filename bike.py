@@ -22,9 +22,6 @@ class ConfigSettings:
 	motorCurrent			= 9 		# in amps
 	motorVoltage			= 300 		# in volts, obv
 
-	## sensor configuration
-
-
 	## disable antialiasing for smoother performance possibly
 	lineAntialiasing 		= True
 	textAntialiasing 		= True
@@ -175,10 +172,9 @@ class WiringWidget(QWidget):
 		strTickUnit 		= "A"
 		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit) + 2
 		pxTickMaxStrH		= fmTickValues.height()
-		rcTimingGrid 		= QRect(clientrect.left(), (clientrect.height() / 2) + clientrect.top() + pad, clientrect.width(), clientrect.height() / 2)
+		rcTimingGrid 		= QRect(clientrect.left(), (clientrect.height() / 2) + clientrect.top() + pad * 2, clientrect.width(), clientrect.height() / 2 - pad)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
-
 
 		## draw the range lines
 		dc.setPen(self.dottedLine)
@@ -234,23 +230,31 @@ class WiringWidget(QWidget):
 			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
-		rcCoil				= QRectF(rcTimingGrid.x(), clientrect.y(), rcTimingGrid.width(), rcTimingGrid.height() - pad)
+		rcCoil				= QRectF(rcTimingGrid.x() + pad * 2, clientrect.y() + pad, rcTimingGrid.width(), rcTimingGrid.height() - pad * 2)
 		dimCoil 			= min(rcCoil.width(), rcCoil.height())
 		dimInner			= dimCoil * 0.8
-		rcCoilSquare		= QRectF(rcCoil.x(), rcCoil.y(), dimCoil, dimCoil)
+		dimSecondary		= dimCoil * 0.96
+		dimTraces			= [dimCoil * 1.15, dimCoil * 1.10, dimCoil * 1.05]
+		rcCoilSquare		= QRectF(rcCoil.x() + dimCoil / 2, rcCoil.y(), dimCoil, dimCoil)
 		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
+		rcCoilSecondary		= QRectF(rcCoilSquare.center().x() - dimSecondary / 2, rcCoilSquare.center().y() - dimSecondary / 2, dimSecondary, dimSecondary)
+		rcOuterTraces		= [QRectF(rcCoilSquare.center().x() - dimTraces[0] / 2, rcCoilSquare.center().y() - dimTraces[0] / 2, dimTraces[0], dimTraces[0]),
+							   QRectF(rcCoilSquare.center().x() - dimTraces[1] / 2, rcCoilSquare.center().y() - dimTraces[1] / 2, dimTraces[1], dimTraces[1]),	
+							   QRectF(rcCoilSquare.center().x() - dimTraces[2] / 2, rcCoilSquare.center().y() - dimTraces[2] / 2, dimTraces[2], dimTraces[2])]
 		degSpacer			= (10 / ConfigSettings.motorCoils)
 		degCoilInterval		= (360 / ConfigSettings.motorCoils)
+		degPhaseSpan		= degCoilInterval * 3
+		degTraceSpacer		= 1.7
 
 		for phase in range(0, 3):
 			pathCoil		= QPainterPath()
 			degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.motorCoils)
-			degCoilOffset	= degCoilInterval * phase
+			degPhaseOffset	= degCoilInterval * (2-phase)
 
-			pathCoil.arcMoveTo(rcCoilSquare, degCoilOffset)
-			ptOutputTrace 	= QPointF(rcCoilSquare.topRight().x() + (2 - phase) * (dim / 30) + (dim / 60), rcCoilSquare.topRight().y())
-			pxWireStartY	= round(rcCoilSquare.topRight().y() + (3 - phase) * (dim / 30) + 1)
-			pxWireStartX	= rcCoilSquare.topRight().x() + dim / 3
+			pathCoil.arcMoveTo(rcCoilSquare, degPhaseOffset)
+			ptOutputTrace 	= QPointF(rcCoilSquare.topRight().x() + phase * (dim / 30) + (dim / 60), rcCoilSquare.topRight().y())
+			pxWireStartX	= rcCoilSquare.topRight().x() + dim / 6
+			pxWireStartY	= round(rcCoilSquare.topRight().y() + (phase + 0.5) * (dim / 30) + 1)
 			radWireStart 	= dim / 60
 
 			## start with the 3-phase input lines
@@ -259,17 +263,25 @@ class WiringWidget(QWidget):
 
 			## start adding the paths for the coil wraps
 			for magnet in range(0, ConfigSettings.motorCoils / 3):
-				degMagnetOffset = degCoilOffset + magnet * 3 * degCoilSpan
+				degMagnetOffset = degPhaseOffset - degPhaseSpan * magnet
 				pathCoil.arcTo(rcCoilSquare, degMagnetOffset, -degCoilSpan)
 				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, 0)
 				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, degCoilSpan)
-				pathCoil.arcTo(rcCoilSquare, degMagnetOffset, 0)
-				if magnet == 1: break
+				pathCoil.arcTo(rcCoilSecondary, degMagnetOffset, 0)
+				pathCoil.arcTo(rcCoilSecondary, degMagnetOffset, -degCoilSpan + degTraceSpacer)
+				if magnet != 2:
+					pathCoil.arcTo(rcOuterTraces[phase], degMagnetOffset - degCoilSpan + degTraceSpacer, 0)
+					pathCoil.arcTo(rcOuterTraces[phase], degMagnetOffset - degCoilSpan + degTraceSpacer, -degPhaseSpan + degCoilSpan - degTraceSpacer)
+
+			pathCoil.lineTo(rcCoilSquare.center())
 			
 			## draw the wiring paths and terminal connectors for each coil
 			dc.setPen(ConfigSettings.coilColorsBright[phase])
 			dc.drawPath(pathCoil)
 			dc.drawEllipse(pxWireStartX - radWireStart / 2, pxWireStartY - radWireStart / 2, radWireStart, radWireStart)
+	
+		dc.setPen(Qt.gray)
+		dc.drawEllipse(rcCoilSquare.center().x() - radWireStart / 2, rcCoilSquare.center().y() - radWireStart / 2, radWireStart, radWireStart)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
