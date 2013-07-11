@@ -18,9 +18,12 @@ class ConfigSettings:
 
 	## motor configuration
 	## this just calibrates the HUD; no change to output driver is made
-	numCoils				= 9 		# must be a multiple of 3
+	motorCoils				= 9 		# must be a multiple of 3
 	motorCurrent			= 9 		# in amps
 	motorVoltage			= 300 		# in volts, obv
+
+	## sensor configuration
+
 
 	## disable antialiasing for smoother performance possibly
 	lineAntialiasing 		= True
@@ -40,7 +43,7 @@ class SensorData():
 		self.coils 			= []
 		self.speed 			= 30
 
-		for ii in range(0, ConfigSettings.numCoils):
+		for ii in range(0, ConfigSettings.motorCoils):
 			self.coils.append(MagneticCoil(ii))
 
 		self.updateSensorsHighPriority()
@@ -236,12 +239,12 @@ class WiringWidget(QWidget):
 		dimInner			= dimCoil * 0.8
 		rcCoilSquare		= QRectF(rcCoil.x(), rcCoil.y(), dimCoil, dimCoil)
 		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
-		degSpacer			= (10 / ConfigSettings.numCoils)
-		degCoilInterval		= (360 / ConfigSettings.numCoils)
+		degSpacer			= (10 / ConfigSettings.motorCoils)
+		degCoilInterval		= (360 / ConfigSettings.motorCoils)
 
 		for phase in range(0, 3):
 			pathCoil		= QPainterPath()
-			degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.numCoils)
+			degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.motorCoils)
 			degCoilOffset	= degCoilInterval * phase
 
 			pathCoil.arcMoveTo(rcCoilSquare, degCoilOffset)
@@ -255,7 +258,7 @@ class WiringWidget(QWidget):
 			pathCoil.lineTo(ptOutputTrace.x(), pxWireStartY)
 
 			## start adding the paths for the coil wraps
-			for magnet in range(0, ConfigSettings.numCoils / 3):
+			for magnet in range(0, ConfigSettings.motorCoils / 3):
 				degMagnetOffset = degCoilOffset + magnet * 3 * degCoilSpan
 				pathCoil.arcTo(rcCoilSquare, degMagnetOffset, -degCoilSpan)
 				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, 0)
@@ -407,9 +410,9 @@ class SensorWidget(QWidget):
 		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
 		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
 		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
-		degSpacer		= (5.5 / ConfigSettings.numCoils, 0.0)[ConfigSettings.numCoils >= 60]
-		degCoilInterval	= (360 / ConfigSettings.numCoils)
-		degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.numCoils)
+		degSpacer		= (5.5 / ConfigSettings.motorCoils, 0.0)[ConfigSettings.motorCoils >= 60]
+		degCoilInterval	= (360 / ConfigSettings.motorCoils)
+		degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.motorCoils)
 
 		## Draw coil slip, and then magnetic field strength
 		nCoil = 0
