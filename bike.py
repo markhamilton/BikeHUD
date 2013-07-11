@@ -159,8 +159,8 @@ class WiringWidget(QWidget):
 		self.fontValues		= QFont('Liberation Sans Narrow')
 
 		## styles
-		self.dottedLine 	= QPen(Qt.blue, 1, Qt.DotLine)
-		self.solidLine		= QPen(Qt.blue, 1)
+		self.dottedLine 	= QPen(ConfigSettings.brightMono, 1, Qt.DotLine)
+		self.solidLine		= QPen(ConfigSettings.darkMono, 1)
 
 	def paintEvent(self, e):
 		clientrect 			= self.getClientRect()
