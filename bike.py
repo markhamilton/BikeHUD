@@ -18,7 +18,7 @@ class ConfigSettings:
 
 	## motor configuration
 	## this just calibrates the HUD; no change to output driver is made
-	motorCoils				= 9 		# must be a multiple of 3
+	motorCoils				= 27 		# must be a multiple of 3
 	motorCurrent			= 9 		# in amps
 	motorVoltage			= 300 		# in volts, obv
 
@@ -230,19 +230,19 @@ class WiringWidget(QWidget):
 			dc.drawPath(pathPhaseOutput)
 
 		## create coil wiring diagram
-		rcCoil				= QRectF(rcTimingGrid.x() + pad * 2, clientrect.y() + pad, rcTimingGrid.width(), rcTimingGrid.height() - pad * 2)
+		rcCoil				= QRectF(rcTimingGrid.center().x() - (dim / 30.0) - pad * 3.0, clientrect.y() + pad * 2, rcTimingGrid.width(), rcTimingGrid.height() - pad * 2.0)
 		dimCoil 			= min(rcCoil.width(), rcCoil.height())
 		dimInner			= dimCoil * 0.8
 		dimSecondary		= dimCoil * 0.96
 		dimTraces			= [dimCoil * 1.15, dimCoil * 1.10, dimCoil * 1.05]
-		rcCoilSquare		= QRectF(rcCoil.x() + dimCoil / 2, rcCoil.y(), dimCoil, dimCoil)
+		rcCoilSquare		= QRectF(rcCoil.left(), rcCoil.y(), dimCoil, dimCoil)
 		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
 		rcCoilSecondary		= QRectF(rcCoilSquare.center().x() - dimSecondary / 2, rcCoilSquare.center().y() - dimSecondary / 2, dimSecondary, dimSecondary)
 		rcOuterTraces		= [QRectF(rcCoilSquare.center().x() - dimTraces[0] / 2, rcCoilSquare.center().y() - dimTraces[0] / 2, dimTraces[0], dimTraces[0]),
 							   QRectF(rcCoilSquare.center().x() - dimTraces[1] / 2, rcCoilSquare.center().y() - dimTraces[1] / 2, dimTraces[1], dimTraces[1]),	
 							   QRectF(rcCoilSquare.center().x() - dimTraces[2] / 2, rcCoilSquare.center().y() - dimTraces[2] / 2, dimTraces[2], dimTraces[2])]
-		degSpacer			= (10 / ConfigSettings.motorCoils)
-		degCoilInterval		= (360 / ConfigSettings.motorCoils)
+		degSpacer			= (10.0 / ConfigSettings.motorCoils)
+		degCoilInterval		= (360.0 / ConfigSettings.motorCoils)
 		degPhaseSpan		= degCoilInterval * 3
 		degTraceSpacer		= 1.7
 
@@ -252,7 +252,7 @@ class WiringWidget(QWidget):
 			degPhaseOffset	= degCoilInterval * (2-phase)
 
 			pathCoil.arcMoveTo(rcCoilSquare, degPhaseOffset)
-			ptOutputTrace 	= QPointF(rcCoilSquare.topRight().x() + phase * (dim / 30) + (dim / 60), rcCoilSquare.topRight().y())
+			ptOutputTrace 	= QPointF(rcCoilSquare.topRight().x() + phase * (dim / 30.0) + (dim / 60.0), rcCoilSquare.topRight().y())
 			pxWireStartX	= rcCoilSquare.topRight().x() + dim / 6
 			pxWireStartY	= round(rcCoilSquare.topRight().y() + (phase + 0.5) * (dim / 30) + 1)
 			radWireStart 	= dim / 60
@@ -269,7 +269,7 @@ class WiringWidget(QWidget):
 				pathCoil.arcTo(rcCoilInner, degMagnetOffset - degCoilSpan, degCoilSpan)
 				pathCoil.arcTo(rcCoilSecondary, degMagnetOffset, 0)
 				pathCoil.arcTo(rcCoilSecondary, degMagnetOffset, -degCoilSpan + degTraceSpacer)
-				if magnet != 2:
+				if magnet != ConfigSettings.motorCoils / 3 - 1:
 					pathCoil.arcTo(rcOuterTraces[phase], degMagnetOffset - degCoilSpan + degTraceSpacer, 0)
 					pathCoil.arcTo(rcOuterTraces[phase], degMagnetOffset - degCoilSpan + degTraceSpacer, -degPhaseSpan + degCoilSpan - degTraceSpacer)
 
@@ -423,7 +423,7 @@ class SensorWidget(QWidget):
 		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
 		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
 		degSpacer		= (5.5 / ConfigSettings.motorCoils, 0.0)[ConfigSettings.motorCoils >= 60]
-		degCoilInterval	= (360 / ConfigSettings.motorCoils)
+		degCoilInterval	= (360.0 / ConfigSettings.motorCoils)
 		degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.motorCoils)
 
 		## Draw coil slip, and then magnetic field strength
