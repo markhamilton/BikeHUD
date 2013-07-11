@@ -4,6 +4,7 @@
 ## TODO (Housekeeping) ##
 # Break out colors and place them into ConfigSettings
 # Load ConfigSettings from file
+# Split this into multiple files
 
 import sys
 import math
@@ -34,6 +35,13 @@ class ConfigSettings:
 	coilColorsBright		= [QColor(254, 188, 68), QColor(103, 186, 139), QColor(196, 11, 114)]
 	coilColors 				= [QColor(153, 113, 41), QColor(47, 84, 63), QColor(94, 5, 55)]
 	coilColorsDark			= [QColor(77, 56, 20), QColor(29, 51, 38), QColor(51, 3, 30)]
+
+	## layout colors
+	background 				= QColor(0, 0, 0)
+	brightMono				= QColor(255, 20, 20)
+	darkMono 				= QColor(102, 8, 8)
+	magPower 	 			= QColor(246, 7, 72)
+	magPowerDark 			= QColor(51, 1, 15)
 
 class SensorData():
 	def __init__(self):
@@ -127,7 +135,6 @@ class ButtonWidget(QAbstractButton):
 class SwitcherWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
-		self.background 	= QColor(0, 0, 0)
 
 		self.btnGroup 		= QButtonGroup(self)
 		self.btnMap	 		= ButtonWidget("MAP", self)
@@ -140,13 +147,12 @@ class SwitcherWidget(QWidget):
 		clientrect 			= QRect(0, 0, self.width(), self.height())
 		dc 					= QPainter(self)
 
-		dc.fillRect(clientrect, self.background)
+		dc.fillRect(clientrect, ConfigSettings.background)
 
 
 class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
-		self.background 	= QColor(0, 0, 0)
 
 		## fonts
 		self.fontLabel 		= QFont('Liberation Mono')
@@ -162,7 +168,7 @@ class WiringWidget(QWidget):
 		pad 				= dim / 40
 		dc 					= QPainter(self)
 
-		dc.fillRect(clientrect, self.background)
+		dc.fillRect(clientrect, ConfigSettings.background)
 		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
 		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 
@@ -172,7 +178,7 @@ class WiringWidget(QWidget):
 		strTickUnit 		= "A"
 		pxTickMaxStrW		= fmTickValues.width("-" + str(round(float(ConfigSettings.motorCurrent))) + " " + strTickUnit) + 2
 		pxTickMaxStrH		= fmTickValues.height()
-		rcTimingGrid 		= QRect(clientrect.left(), (clientrect.height() / 2) + clientrect.top() + pad * 2, clientrect.width(), clientrect.height() / 2 - pad)
+		rcTimingGrid 		= QRect(clientrect.width() / 10.0 + clientrect.left(), (clientrect.height() / 2.0) + clientrect.top() + pad * 2.0, clientrect.width() * 0.80, clientrect.height() / 2.0 - pad)
 		rcTimingRange		= QRect(rcTimingGrid.x() + pad + pxTickMaxStrW, rcTimingGrid.y(), rcTimingGrid.width() - pad - pxTickMaxStrW, rcTimingGrid.height() - pad - pxTickMaxStrH)
 		pathTimingRange		= QPainterPath()
 
@@ -299,14 +305,9 @@ class SensorWidget(QWidget):
 		self.sensors 			= SensorData()
 
 		## tweak colors to your preference
-		self.background 		= QColor(0, 0, 0)
-		self.brightMono			= QColor(255, 20, 20)
-		self.darkMono 			= QColor(102, 8, 8)
-		self.magPower 	 		= QColor(246, 7, 72)
-		self.magPowerDark 		= QColor(51, 1, 15)
-		self.penBattOutline		= QPen(self.brightMono, 2)
+		self.penBattOutline		= QPen(ConfigSettings.brightMono, 2)
 
-		## tweak fonts to your preference (you need a narrow font!)
+		## fonts
 		self.fontSpeed 			= QFont('Liberation Sans Narrow')
 		self.fontSpeedUnit 		= QFont('Liberation Sans Narrow')
 		self.fontSlowDown		= QFont('Liberation Sans Narrow')
@@ -353,10 +354,10 @@ class SensorWidget(QWidget):
 		pad 			= dim / 40
 		dc 				= QPainter(self)
 
-		dc.fillRect(clientrect, self.background)
+		dc.fillRect(clientrect, ConfigSettings.background)
 		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
-		dc.setPen(self.brightMono)
+		dc.setPen(ConfigSettings.brightMono)
 
 		## draw odometer
 		strSpeed 		= self.sensors.getSpeedString()
@@ -381,7 +382,7 @@ class SensorWidget(QWidget):
 
 		# TODO: Finish this, it looks awful as-is:
 		# dc.drawRect(rcBattery)
-		# dc.fillRect(rcBattery, self.darkMono)
+		# dc.fillRect(rcBattery, ConfigSettings.darkMono)
 
 		## draw current time
 		fmTime			= QFontMetrics(self.fontTime)
@@ -389,7 +390,7 @@ class SensorWidget(QWidget):
 		rcDateText 		= QRect(clientrect.left(), rcTimeText.bottomRight().y(), clientrect.width(), fmTime.height())
 
 		dc.setFont(self.fontTime)
-		dc.setPen(self.darkMono)
+		dc.setPen(ConfigSettings.darkMono)
 		dc.drawText(rcTimeText, Qt.AlignCenter, str(self.sensors.getTime()))
 		dc.drawText(rcDateText, Qt.AlignCenter, str(self.sensors.getDate()))
 
@@ -403,7 +404,7 @@ class SensorWidget(QWidget):
 			rcSlowDown	= QRect(clientrect.center() - QPoint(pxSlowDownW + pxSpeedW / 2, pxSlowDownH / 2), QSize(pxSlowDownW, pxSlowDownH))
 
 			dc.setFont(self.fontSlowDown)
-			dc.setPen(self.brightMono)
+			dc.setPen(ConfigSettings.brightMono)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignTop, strSlow)
 			dc.drawText(rcSlowDown, Qt.AlignHCenter | Qt.AlignBottom, strDown)
 			# Suggestion: Draw X between SLOW and DOWN?
@@ -487,8 +488,8 @@ class SensorWidget(QWidget):
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, 0)
 			pathField.arcTo(rcMagInner, nCoil * degCoilInterval - degCoilSpan, degCoilSpan)
 
-			dc.setPen(self.magPower)
-			dc.fillPath(pathField, self.magPowerDark)
+			dc.setPen(ConfigSettings.magPower)
+			dc.fillPath(pathField, ConfigSettings.magPowerDark)
 			dc.drawPath(pathField)
 
 			nCoil += 1
