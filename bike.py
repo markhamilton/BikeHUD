@@ -155,7 +155,7 @@ class WiringWidget(QWidget):
 		QWidget.__init__(self, parent)
 
 		## fonts
-		self.fontLabel 		= QFont('Liberation Mono')
+		self.fontStats 		= QFont('Liberation Mono')
 		self.fontValues		= QFont('Liberation Sans Narrow')
 
 		## styles
@@ -289,6 +289,15 @@ class WiringWidget(QWidget):
 		dc.setPen(Qt.gray)
 		dc.drawEllipse(rcCoilSquare.center().x() - radWireStart / 2, rcCoilSquare.center().y() - radWireStart / 2, radWireStart, radWireStart)
 
+		## draw motor stats
+		# TODO: Add other raw sensor data here as well
+		strMotorStats = "%d Coils\n" \
+						"%dV, %dA" \
+						% tuple([ConfigSettings.motorCoils, ConfigSettings.motorVoltage, ConfigSettings.motorCurrent])
+
+		dc.setFont(self.fontStats)
+		dc.drawText(QRect(rcTimingGrid.x(), rcCoilSquare.y(), self.width(), self.height()), Qt.AlignLeft, strMotorStats)
+
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
 		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
@@ -296,6 +305,7 @@ class WiringWidget(QWidget):
 	def resizeEvent(self, e):
 		dim = min(self.width(), self.height())
 		self.fontValues.setPixelSize(dim / 28)
+		self.fontStats.setPixelSize(dim / 25)
 
 
 class SensorWidget(QWidget):
