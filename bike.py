@@ -19,7 +19,7 @@ class ConfigSettings:
 
 	## motor configuration
 	## this just calibrates the HUD; no change to output driver is made
-	motorCoils				= 27 		# must be a multiple of 3
+	motorCoils				= 18  		# must be a multiple of 3
 	motorCurrent			= 9 		# in amps
 	motorVoltage			= 300 		# in volts, obv
 
@@ -296,7 +296,7 @@ class WiringWidget(QWidget):
 						% tuple([ConfigSettings.motorCoils, ConfigSettings.motorVoltage, ConfigSettings.motorCurrent])
 
 		dc.setFont(self.fontStats)
-		dc.drawText(QRect(rcTimingGrid.x(), rcCoilSquare.y(), self.width(), self.height()), Qt.AlignLeft, strMotorStats)
+		dc.drawText(QRect(rcTimingGrid.x(), rcCoilSquare.y(), self.width(), rcCoilSquare.height()), Qt.AlignLeft | Qt.AlignBottom, strMotorStats)
 
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
