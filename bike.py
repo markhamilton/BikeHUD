@@ -128,28 +128,46 @@ class ButtonWidget(QAbstractButton):
 	def __init__(self, text, parent = 0):
 		QWidget.__init__(self, parent)
 		self.setText(text)
+		self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+		self.fontText = QFont("Liberation Mono")
 
 	def paintEvent(self, e):
 		clientrect 			= QRect(0, 0, self.width() - 1, self.height() - 1)
 		dc 					= QPainter(self)
 
-		# dc.fillRect(clientrect, QColor(0, 0, 0))
-		dc.setPen(QColor(255, 255, 255))
-		dc.drawRect(clientrect)
+		dc.setFont(self.fontText)
 
-		dc.drawText(clientrect, Qt.AlignCenter, self.text())
+		#print str(self.isCheckable()) + "," + str(self.isChecked())
+
+		if self.isCheckable() and self.isChecked():
+			dc.fillRect(clientrect, QColor(200, 200, 200))
+			dc.setPen(QColor(0, 0, 0))
+		else:
+			dc.setPen(QColor(200, 200, 200))
+			dc.drawRect(clientrect)
+
+		dc.drawText(clientrect, Qt.AlignCenter | Qt.AlignVCenter, self.text())
+
+	def resizeEvent(self, e):
+		self.fontText.setPixelSize(self.height() / 3.0)
+		#print "geometry: (" + str(self.x()) + ", " + str(self.y()) + ", " + str(self.width()) + ", " + str(self.height()) + ")"
 
 
 class SwitcherWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
 
-		self.btnGroup 		= QButtonGroup(self)
 		self.btnMap	 		= ButtonWidget("MAP", self)
 		self.btnWiring 		= ButtonWidget("WIRE", self)
+		self.hLayout		= QHBoxLayout(self)
 
-		self.btnGroup.addButton(self.btnMap)
-		self.btnGroup.addButton(self.btnWiring)
+		self.btnWiring.setCheckable(True)
+		self.btnWiring.setChecked(True)
+
+		self.hLayout.addWidget(self.btnMap)
+		self.hLayout.addWidget(self.btnWiring)
+
+		self.setLayout(self.hLayout)
 
 	def paintEvent(self, e):
 		clientrect 			= QRect(0, 0, self.width(), self.height())
@@ -161,6 +179,7 @@ class SwitcherWidget(QWidget):
 class WiringWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
+		self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
 		## fonts
 		self.fontStats 		= QFont('Liberation Mono')
@@ -319,6 +338,7 @@ class WiringWidget(QWidget):
 class SensorWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
+		self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
 		self.sensors 			= SensorData()
 
@@ -531,17 +551,28 @@ class MainWindow(QMainWindow):
 	def __init__(self, *args):
 		QMainWindow.__init__(self, *args)
 		self.wnd 		= QWidget(self)
-		self.sensors 	= SensorWidget(self)
-		self.wiring 	= WiringWidget(self)
-		self.switcher 	= SwitcherWidget(self)
-		# self.setCentralWidget(self.sensors)
+		self.setCentralWidget(self.wnd)
 
-	def resizeEvent(self, e):
-		pxSwitcherHeight = 80
+		self.sensors 	= SensorWidget(self.wnd)
+		self.wiring 	= WiringWidget(self.wnd)
+		self.switcher 	= SwitcherWidget(self.wnd)
 
-		self.sensors.setGeometry(QRect(0, 0, self.width() / 2, self.height() - pxSwitcherHeight))
-		self.wiring.setGeometry(QRect(self.width() / 2, 0, self.width() / 2, self.height() - pxSwitcherHeight))
-		self.switcher.setGeometry(QRect(0, self.height() - pxSwitcherHeight, self.width(), pxSwitcherHeight))
+
+		self.hLayout 	= QHBoxLayout()
+		self.hLayout.setSpacing(0)
+		self.hLayout.setContentsMargins(0, 0, 0, 0)
+		self.hLayout.addWidget(self.sensors)
+		self.hLayout.addWidget(self.wiring)
+
+		self.vLayout	= QVBoxLayout()
+		self.vLayout.setSpacing(0)
+		self.vLayout.setContentsMargins(0, 0, 0, 0)
+		self.vLayout.addLayout(self.hLayout, 5)
+		self.vLayout.addWidget(self.switcher, 1)
+
+		self.wnd.setLayout(self.vLayout)
+		print str(self.wnd.x()) + ", " + str(self.wnd.y()) + ", " + str(self.wnd.width()) + ", " + str(self.wnd.height())
+
 
 class BikeHudApp(QApplication):
 	def __init__(self, *args):
