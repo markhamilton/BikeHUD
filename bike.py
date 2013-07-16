@@ -21,7 +21,8 @@ class ConfigSettings:
 	## this just calibrates the HUD; no change to output driver is made
 	motorCoils				= 18  		# must be a multiple of 3
 	motorCurrent			= 9 		# in amps
-	motorVoltage			= 300 		# in volts, obv
+	motorVoltage			= 300 		# in volts
+	loadRadius				= 22		# bike wheel radius, in inches/CM (depends on metric flag above)
 
 	## disable antialiasing for smoother performance possibly
 	lineAntialiasing 		= True
@@ -46,7 +47,7 @@ class ConfigSettings:
 class SensorData():
 	def __init__(self):
 		self.coils 			= []
-		self.speed 			= 30
+		self.rpm			= 250
 
 		for ii in range(0, ConfigSettings.motorCoils):
 			self.coils.append(MagneticCoil(ii))
@@ -59,16 +60,23 @@ class SensorData():
 		# safe limit is 30mph / 48kph
 		return self.getSpeed() > (30, 48)[ConfigSettings.metric]
 
+	def getRPM(self):
+		return self.rpm
+
+	def getRPMString(self):
+		strRPM = str(round(self.getRPM()))[:-2]
+		if strRPM == "-0": return "0"
+		else: return strRPM
+
 	def getSpeed(self):
-		currentSpeed = self.speed * (1, 1.609344)[ConfigSettings.metric]
+		r = (ConfigSettings.loadRadius, ConfigSettings.loadRadius * 0.393701)[ConfigSettings.metric] # r is always in inches
+		currentSpeed = (0.00595 * self.getRPM() * r) * (1, 1.609344)[ConfigSettings.metric]
 		return min(currentSpeed, 99)
 
 	def getSpeedString(self):
 		strSpeed = str(round(self.getSpeed()))[:-2]
-		if strSpeed == "-0":
-			return "0"
-		else:
-			return strSpeed
+		if strSpeed == "-0": return "0"
+		else: return strSpeed
 
 	def getBatteryPercent(self):
 		return self.battery
@@ -80,7 +88,7 @@ class SensorData():
 		self.time 			= str(datetime.now().time())[:-2]
 
 	def updateSensorsMediumPriority(self):
-		self.speed 			= self.speed + random() * 2.0 - 1.0
+		self.rpm 			= self.rpm + random() * 2.0 - 1.0
 
 		for coil in self.coils:
 			coil.updateCoil()
