@@ -140,8 +140,6 @@ class ButtonWidget(QAbstractButton):
 
 		dc.setFont(self.fontText)
 
-		#print str(self.isCheckable()) + "," + str(self.isChecked())
-
 		if self.isCheckable() and self.isChecked():
 			dc.fillRect(clientrect, QColor(200, 200, 200))
 			dc.setPen(QColor(0, 0, 0))
@@ -153,7 +151,6 @@ class ButtonWidget(QAbstractButton):
 
 	def resizeEvent(self, e):
 		self.fontText.setPixelSize(self.height() / 3.0)
-		#print "geometry: (" + str(self.x()) + ", " + str(self.y()) + ", " + str(self.width()) + ", " + str(self.height()) + ")"
 
 
 class SwitcherWidget(QWidget):
@@ -176,8 +173,6 @@ class SwitcherWidget(QWidget):
 		clientrect 			= QRect(0, 0, self.width(), self.height())
 		dc 					= QPainter(self)
 
-		dc.fillRect(clientrect, ConfigSettings.background)
-
 
 class WiringWidget(QWidget):
 	def __init__(self, parent=0):
@@ -198,7 +193,6 @@ class WiringWidget(QWidget):
 		pad 				= dim / 40
 		dc 					= QPainter(self)
 
-		dc.fillRect(clientrect, ConfigSettings.background)
 		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
 		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 
@@ -395,7 +389,6 @@ class SensorWidget(QWidget):
 		pad 			= dim / 40
 		dc 				= QPainter(self)
 
-		dc.fillRect(clientrect, ConfigSettings.background)
 		dc.setRenderHint(QPainter.Antialiasing, ConfigSettings.lineAntialiasing)
 		dc.setRenderHint(QPainter.TextAntialiasing, ConfigSettings.textAntialiasing)
 		dc.setPen(ConfigSettings.brightMono)
@@ -576,7 +569,6 @@ class MainWindow(QMainWindow):
 		self.vLayout.addWidget(self.switcher, 1)
 
 		self.wnd.setLayout(self.vLayout)
-		print str(self.wnd.x()) + ", " + str(self.wnd.y()) + ", " + str(self.wnd.width()) + ", " + str(self.wnd.height())
 
 
 class BikeHudApp(QApplication):
@@ -584,7 +576,7 @@ class BikeHudApp(QApplication):
 		QApplication.__init__(self, *args)
 		
 		pal = self.palette()
-		pal.setColor(QPalette.Background, Qt.gray)
+		pal.setColor(QPalette.Background, ConfigSettings.background)
 		self.setPalette(pal)
 
 		self.wnd = MainWindow()
