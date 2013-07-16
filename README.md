@@ -5,7 +5,7 @@ Currently this project is in development and is only working with test data. Soo
 This was meant to run on a Beaglebone using a touch-screen shield or python-capable smartphone and a high-amp motor driver to run the bike wheel coils. You can also write custom drivers to interface with any GPIO or PC board you wish.
 
 ### SNAPSHOTS
-![2013/07/03 - Screenshot](http://www.markhamilton.info/applications/bike.png)
+![2013/07/03 - Screenshot](http://www.markhamilton.info/wp-content/uploads/2013/07/Screenshot-from-2013-07-15-232459.png)
 
 ### COMPUTER HARDWARE
 * [Beaglebone](http://www.logicsupply.com/products/bb_bblk_000?gclid=CKyzt4mckLgCFRRk7Aod9VwACA) running Debian Linux
@@ -28,4 +28,7 @@ Alternatively, a phone capable of running python and Qt may be used instead. I a
 ### WIRING
 The output of the motor driver is a 9 Amp, 300V 3-phase signal. This means you must have a multiple of 3 stator coils with an identical number of fixed magnets.
 
-* Wiring diagrams to come.
+* Wiring diagram demonstrated in snapshot above.
+* The system can diagram any reasonable number of coils, so long as the screen can fit them in the given resolution.
+* The terminations of each phase connect at a central point.
+* The timing of each phase is 120 degrees apart since one full rotation of the motor is 360 degrees, and 360/3 = 120.
