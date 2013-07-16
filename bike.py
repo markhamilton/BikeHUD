@@ -24,6 +24,9 @@ class ConfigSettings:
 	motorVoltage			= 300 		# in volts
 	loadRadius				= 22		# bike wheel radius, in inches/CM (depends on metric flag above)
 
+	# misc settings
+	showRPM					= True		# toggle this flag to show RPM vs speed (tap the sensor widget to toggle)
+
 	## disable antialiasing for smoother performance possibly
 	lineAntialiasing 		= True
 	textAntialiasing 		= True
@@ -47,7 +50,7 @@ class ConfigSettings:
 class SensorData():
 	def __init__(self):
 		self.coils 			= []
-		self.rpm			= 250
+		self.rpm			= 2500
 
 		for ii in range(0, ConfigSettings.motorCoils):
 			self.coils.append(MagneticCoil(ii))
@@ -398,8 +401,9 @@ class SensorWidget(QWidget):
 		dc.setPen(ConfigSettings.brightMono)
 
 		## draw odometer
-		strSpeed 		= self.sensors.getSpeedString()
+		strSpeed 		= (self.sensors.getSpeedString(), self.sensors.getRPMString())[ConfigSettings.showRPM]
 		strSpeedUnit 	= ("mph", "kph")[ConfigSettings.metric]
+		strSpeedUnit	= (strSpeedUnit, "rpm")[ConfigSettings.showRPM]
 
 		dc.setFont(self.fontSpeed)
 		fmSpeed 		= QFontMetrics(self.fontSpeed)
@@ -433,7 +437,7 @@ class SensorWidget(QWidget):
 		dc.drawText(rcDateText, Qt.AlignCenter, str(self.sensors.getDate()))
 
 		## draw speed warning for speeds over safe limit
-		if self.sensors.isSpeedDangerous():
+		if not ConfigSettings.showRPM and self.sensors.isSpeedDangerous():
 			strSlow		= "SLOW"
 			strDown		= "DOWN"
 			fmSlowDown	= QFontMetrics(self.fontSlowDown)
@@ -540,7 +544,9 @@ class SensorWidget(QWidget):
 		dim = min(self.width(), self.height())
 
 		## resize fonts
-		self.fontSpeed.setPixelSize(dim / 3)
+		if ConfigSettings.showRPM: self.fontSpeed.setPixelSize(dim / 5)
+		else: self.fontSpeed.setPixelSize(dim / 3)
+
 		self.fontSpeedUnit.setPixelSize(dim / 18)
 		self.fontSlowDown.setPixelSize(dim / 24)
 		self.fontSlipTicks.setPixelSize(dim / 30)
@@ -556,7 +562,6 @@ class MainWindow(QMainWindow):
 		self.sensors 	= SensorWidget(self.wnd)
 		self.wiring 	= WiringWidget(self.wnd)
 		self.switcher 	= SwitcherWidget(self.wnd)
-
 
 		self.hLayout 	= QHBoxLayout()
 		self.hLayout.setSpacing(0)
