@@ -361,7 +361,7 @@ class SensorWidget(QWidget):
 		self.timerVeryLow		= QTimer()
 
 		self.timerHigh.timeout.connect(self.updateHighPriority)
-		self.timerMedium.timeout.connect(self.updateMediumPriorty)
+		self.timerMedium.timeout.connect(self.updateMediumPriority)
 		self.timerLow.timeout.connect(self.updateLowPriority)
 		self.timerVeryLow.timeout.connect(self.updateVeryLowPriority)
 		
@@ -374,7 +374,7 @@ class SensorWidget(QWidget):
 		self.sensors.updateSensorsHighPriority()
 		self.repaint()
 
-	def updateMediumPriorty(self):
+	def updateMediumPriority(self):
 		self.sensors.updateSensorsMediumPriority()
 
 	def updateLowPriority(self):
@@ -545,6 +545,9 @@ class SensorWidget(QWidget):
 		self.fontSlipTicks.setPixelSize(dim / 30)
 		self.fontTime.setPixelSize(dim / 20)
 
+	def mouseReleaseEvent(self, e):
+		ConfigSettings.showRPM = not ConfigSettings.showRPM
+		self.resizeEvent(e)
 
 class MainWindow(QMainWindow):
 	def __init__(self, *args):
