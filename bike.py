@@ -127,25 +127,26 @@ class MagneticCoil():
 		self.powerHistory.pop(0)
 
 
-class ButtonWidget(QAbstractButton):
+class ModeWidget(QAbstractButton):
 	def __init__(self, text, parent = 0):
 		QWidget.__init__(self, parent)
 		self.setText(text)
 		self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 		self.fontText = QFont("Liberation Mono")
+		self.setCheckable(True)
 
 	def paintEvent(self, e):
-		clientrect 			= QRect(0, 0, self.width() - 1, self.height() - 1)
+		clientrect 			= QRect(0, 0, self.width(), self.height())
 		dc 					= QPainter(self)
 
 		dc.setFont(self.fontText)
 
-		if self.isCheckable() and self.isChecked():
+		if self.isChecked():
 			dc.fillRect(clientrect, QColor(200, 200, 200))
 			dc.setPen(QColor(0, 0, 0))
 		else:
 			dc.setPen(QColor(200, 200, 200))
-			dc.drawRect(clientrect)
+			dc.drawRect(QRect(clientrect.x(), clientrect.y(), clientrect.width() - 1, clientrect.height() - 1))
 
 		dc.drawText(clientrect, Qt.AlignCenter | Qt.AlignVCenter, self.text())
 
@@ -157,17 +158,27 @@ class SwitcherWidget(QWidget):
 	def __init__(self, parent=0):
 		QWidget.__init__(self, parent)
 
-		self.btnMap	 		= ButtonWidget("MAP", self)
-		self.btnWiring 		= ButtonWidget("WIRE", self)
+		self.btnMap	 		= ModeWidget("MAP", self)
+		self.btnWire 		= ModeWidget("WIRE", self)
 		self.hLayout		= QHBoxLayout(self)
 
-		self.btnWiring.setCheckable(True)
-		self.btnWiring.setChecked(True)
+		self.btnMap.setChecked(True)
 
 		self.hLayout.addWidget(self.btnMap)
-		self.hLayout.addWidget(self.btnWiring)
+		self.hLayout.addWidget(self.btnWire)
+
+		QObject.connect(self.btnMap, SIGNAL("clicked()"), self.modeMap)
+		QObject.connect(self.btnWire, SIGNAL("clicked()"), self.modeWire)
 
 		self.setLayout(self.hLayout)
+
+	def modeMap(self):
+		self.btnMap.setChecked(True)
+		self.btnWire.setChecked(False)
+
+	def modeWire(self):
+		self.btnMap.setChecked(False)
+		self.btnWire.setChecked(True)
 
 	def paintEvent(self, e):
 		clientrect 			= QRect(0, 0, self.width(), self.height())
