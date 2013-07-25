@@ -180,9 +180,9 @@ class SwitcherWidget(QWidget):
 		self.btnMap.setChecked(False)
 		self.btnWire.setChecked(True)
 
-	def paintEvent(self, e):
-		clientrect 			= QRect(0, 0, self.width(), self.height())
-		dc 					= QPainter(self)
+#	def paintEvent(self, e):
+#		clientrect 			= QRect(0, 0, self.width(), self.height())
+#		dc 					= QPainter(self)
 
 
 class WiringWidget(QWidget):
@@ -280,7 +280,7 @@ class WiringWidget(QWidget):
 		rcCoilInner			= QRectF(rcCoilSquare.center().x() - dimInner / 2, rcCoilSquare.center().y() - dimInner / 2, dimInner, dimInner)
 		rcCoilSecondary		= QRectF(rcCoilSquare.center().x() - dimSecondary / 2, rcCoilSquare.center().y() - dimSecondary / 2, dimSecondary, dimSecondary)
 		rcOuterTraces		= [QRectF(rcCoilSquare.center().x() - dimTraces[0] / 2, rcCoilSquare.center().y() - dimTraces[0] / 2, dimTraces[0], dimTraces[0]),
-							   QRectF(rcCoilSquare.center().x() - dimTraces[1] / 2, rcCoilSquare.center().y() - dimTraces[1] / 2, dimTraces[1], dimTraces[1]),	
+							   QRectF(rcCoilSquare.center().x() - dimTraces[1] / 2, rcCoilSquare.center().y() - dimTraces[1] / 2, dimTraces[1], dimTraces[1]),
 							   QRectF(rcCoilSquare.center().x() - dimTraces[2] / 2, rcCoilSquare.center().y() - dimTraces[2] / 2, dimTraces[2], dimTraces[2])]
 		degSpacer			= (10.0 / ConfigSettings.motorCoils)
 		degCoilInterval		= (360.0 / ConfigSettings.motorCoils)
@@ -299,7 +299,7 @@ class WiringWidget(QWidget):
 			radWireStart 	= dim / 60
 
 			## start with the 3-phase input lines
-			pathCoil.moveTo(pxWireStartX, pxWireStartY) 
+			pathCoil.moveTo(pxWireStartX, pxWireStartY)
 			pathCoil.lineTo(ptOutputTrace.x(), pxWireStartY)
 
 			## start adding the paths for the coil wraps
@@ -315,12 +315,12 @@ class WiringWidget(QWidget):
 					pathCoil.arcTo(rcOuterTraces[phase], degMagnetOffset - degCoilSpan + degTraceSpacer, -degPhaseSpan + degCoilSpan - degTraceSpacer)
 
 			pathCoil.lineTo(rcCoilSquare.center())
-			
+
 			## draw the wiring paths and terminal connectors for each coil
 			dc.setPen(ConfigSettings.coilColorsBright[phase])
 			dc.drawPath(pathCoil)
 			dc.drawEllipse(pxWireStartX - radWireStart / 2, pxWireStartY - radWireStart / 2, radWireStart, radWireStart)
-	
+
 		dc.setPen(Qt.gray)
 		dc.drawEllipse(rcCoilSquare.center().x() - radWireStart / 2, rcCoilSquare.center().y() - radWireStart / 2, radWireStart, radWireStart)
 
@@ -375,7 +375,7 @@ class SensorWidget(QWidget):
 		self.timerMedium.timeout.connect(self.updateMediumPriority)
 		self.timerLow.timeout.connect(self.updateLowPriority)
 		self.timerVeryLow.timeout.connect(self.updateVeryLowPriority)
-		
+
 		self.timerHigh.start(10)
 		self.timerMedium.start(600)
 		self.timerLow.start(2000)
@@ -415,7 +415,7 @@ class SensorWidget(QWidget):
 		pxSpeedW 		= fmSpeed.width(strSpeed)
 		pxSpeedH 		= fmSpeed.height()
 		pxSpeedUnitW	= fmSpeedUnit.width(strSpeedUnit)
-		pxSpeedUnitH	= fmSpeedUnit.height()
+#		pxSpeedUnitH	= fmSpeedUnit.height()
 		rcSpeedUnit		= QRect(clientrect.center() + QPoint(pxSpeedW / 2, -pxSpeedH / 2 - fmSpeed.descent() + fmSpeedUnit.descent()), QSize(pxSpeedUnitW, pxSpeedH))
 
 		dc.drawText(clientrect, Qt.AlignCenter, strSpeed)
@@ -423,8 +423,8 @@ class SensorWidget(QWidget):
 		dc.drawText(rcSpeedUnit, Qt.AlignBottom, strSpeedUnit)
 
 		## draw battery meter
-		sizeBattery		= QSize(clientrect.width() / 8, clientrect.height() / 32)
-		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2 + pad), sizeBattery)
+#		sizeBattery		= QSize(clientrect.width() / 8, clientrect.height() / 32)
+#		rcBattery		= QRect(clientrect.center() - QPoint(sizeBattery.width() / 2, (pxSpeedH - sizeBattery.height()) / 2 + pad), sizeBattery)
 
 		# TODO: Finish this, it looks awful as-is:
 		# dc.drawRect(rcBattery)
@@ -466,9 +466,9 @@ class SensorWidget(QWidget):
 		rcSlipTickMin 	= QRectF(clientrect.center().x() - radSlipTickMin / 2, clientrect.center().y() - radSlipTickMin / 2, radSlipTickMin, radSlipTickMin)
 		rcSlipOuter 	= QRectF(clientrect.center().x() - radSlipOuter / 2, clientrect.center().y() - radSlipOuter / 2, radSlipOuter, radSlipOuter)
 		rcSlipInner 	= QRectF(clientrect.center().x() - radSlipInner / 2, clientrect.center().y() - radSlipInner / 2, radSlipInner, radSlipInner)
-		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
+#		rcMagOuter		= QRectF(clientrect.center().x() - radMagOuter / 2, clientrect.center().y() - radMagOuter / 2, radMagOuter, radMagOuter)
 		rcMagInner		= QRectF(clientrect.center().x() - radMagInner / 2, clientrect.center().y() - radMagInner / 2, radMagInner, radMagInner)
-		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
+#		fmSlipTicks		= QFontMetrics(self.fontSlipTicks)
 		degSpacer		= (5.5 / ConfigSettings.motorCoils, 0.0)[ConfigSettings.motorCoils >= 60]
 		degCoilInterval	= (360.0 / ConfigSettings.motorCoils)
 		degCoilSpan		= degCoilInterval - (degSpacer * ConfigSettings.motorCoils)
@@ -480,7 +480,6 @@ class SensorWidget(QWidget):
 			pathSlip 			= QPainterPath()
 			pathSlipGrid		= QPainterPath()
 			pathField 			= QPainterPath()
-			degPathIncrement 	= degCoilSpan / len(coil.powerHistory)
 
 			pathSlip.arcMoveTo(rcSlipOuter, nCoil * degCoilInterval)
 			pathSlip.arcTo(rcSlipOuter, nCoil * degCoilInterval, -degCoilSpan)
@@ -539,7 +538,7 @@ class SensorWidget(QWidget):
 			dc.drawPath(pathField)
 
 			nCoil += 1
-			
+
 	def getClientRect(self):
 		dim = min(self.width(), self.height())
 		return QRect((self.width() - dim) / 2, (self.height() - dim) / 2, dim, dim)
@@ -588,7 +587,7 @@ class MainWindow(QMainWindow):
 class BikeHudApp(QApplication):
 	def __init__(self, *args):
 		QApplication.__init__(self, *args)
-		
+
 		pal = self.palette()
 		pal.setColor(QPalette.Background, ConfigSettings.background)
 		self.setPalette(pal)
