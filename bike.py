@@ -170,6 +170,9 @@ class SwitcherWidget(QWidget):
         QObject.connect(self.btnMap, SIGNAL("clicked()"), self.modeMap)
         QObject.connect(self.btnWire, SIGNAL("clicked()"), self.modeWire)
 
+        self.btnMap.setVisible(False)
+        self.btnWire.setVisible(False)
+
         self.setLayout(self.hLayout)
 
     def modeMap(self):
